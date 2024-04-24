@@ -8,7 +8,9 @@ WEBSITES = [
         'id': '4', # uuid.uuid4().hex, # '4' for testing purpose
         'name': 'WP1',
         'url': 'https://wp1.goxcms.xyz/',
-        'active': True
+        'api_key': 'ewlg6v944t4qNrVb7R5iVijOgvETLEdqhIbheZwkJYs7RpeCyT7753cxStQLOPYp',
+        'active': True,
+        'description': 'This is a WordPress website'
     }
 ]
 
@@ -65,6 +67,10 @@ def single_website(website_id):
                 response = requests.get(favicon_url)
                 favicon_base64 = base64.b64encode(response.content).decode('utf-8')
                 website['favicon'] = favicon_base64
+                # get website plugins from WordPress base API
+                api_url = f"{website['url']}/wp-json/wp-manager-plugin/v1/installed-plugins?api_key={website['api_key']}"
+                response = requests.get(api_url)
+                website['plugins'] = response.json()
             except:
                 website['status_code'] = 404
     
