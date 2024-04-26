@@ -1,66 +1,66 @@
 <template>
-  <div class="container mx-auto">
+  <div class="container-fluid">
     <div class="flex flex-col">
-      <h1 class="text-3xl font-bold mb-4">WordPress Manager</h1>
-      <hr class="my-4" />
-      <button
-        type="button"
-        class="bg-green-500 text-white px-4 py-2 rounded-sm mb-4 shadow-md hover:bg-green-600 transition-colors duration-300 w-32"
-        @click="toggleAddWebsiteModal">
-        Add Website
-      </button>
 
-      <table class="table-auto w-full bg-gray-200 p-8">
-        <thead>
-          <tr class="bg-gray-100">
-            <th scope="col" @click="handleSort('name')" class="cursor-pointer text-left">
-              Name
-              <i v-if="sortBy === 'name'" :class="reverse ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
-            </th>
-            <th scope="col" @click="handleSort('url')" class="cursor-pointer text-left">
-              URL
-              <i v-if="sortBy === 'url'" :class="reverse ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
-            </th>
-            <th scope="col" @click="handleSort('active')" class="cursor-pointer text-left">
-              Status
-              <i v-if="sortBy === 'active'" :class="reverse ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
-            </th>
-            <th class="text-left">Action</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white p-4">
-          <tr v-for="(website, index) in websites" :key="index">
-            <td>{{ website.name }}</td>
-            <td>{{ website.url }}</td>
-            <td>
-              <span v-if="website.active" class="text-green-500">Active</span>
-              <span v-else class="text-red-500">Inactive</span>
-            </td>
-            <td>
-              <div class="flex items-center">
-             
-                <router-link
-                :to="`/website/${website.id}`"
-                class="bg-blue-500 text-white px-4 py-2 rounded-sm mr-2 transition-colors duration-300 hover:bg-blue-600"
-                >
-                View
-                </router-link>
-              <button
-                class="bg-yellow-500 text-white px-4 py-2 rounded-sm mr-2 transition-colors duration-300 hover:bg-yellow-600"
-                @click="toggleEditWebsiteModal(website)"
-              >
-                Update
-              </button>
-              <button
-                class="bg-red-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-red-600"
-                @click="handleDeleteWebsite(website)"
-              >
-                Delete
-              </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
+      <div class="flex justify-between items-center p-4">
+        <h2 class="text-2xl font-bold">Websites</h2>
+        <button
+          class="bg-blue-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-blue-600"
+          @click="toggleAddWebsiteModal"
+        >
+          Add Website
+        </button>
+      </div>
+      <table class="table-auto w-full bg-gray-800 p-8 rounded-lg">
+      <thead>
+        <tr class="bg-blue-400 text-white">
+        <th scope="col" @click="handleSort('name')" class="cursor-pointer text-left py-2 px-4">
+          Name
+          <i v-if="sortBy === 'name'" :class="reverse ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+        </th>
+        <th scope="col" @click="handleSort('url')" class="cursor-pointer text-left py-2 px-4">
+          URL
+          <i v-if="sortBy === 'url'" :class="reverse ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+        </th>
+        <th scope="col" @click="handleSort('active')" class="cursor-pointer text-left py-2 px-4">
+          Status
+          <i v-if="sortBy === 'active'" :class="reverse ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
+        </th>
+        <th class="text-left py-2 px-4">Action</th>
+        </tr>
+      </thead>
+      <tbody class="bg-gray-900 p-4">
+        <tr v-for="(website, index) in websites" :key="index">
+        <td class="py-2 px-4 text-white">{{ website.name }}</td>
+        <td class="py-2 px-4 text-white">{{ website.url }}</td>
+        <td class="py-2 px-4">
+          <span v-if="website.active" class="text-green-500">Active</span>
+          <span v-else class="text-red-500">Inactive</span>
+        </td>
+        <td class="py-2 px-4">
+          <div class="flex items-center">
+          <router-link
+            :to="`/website/${website.id}`"
+            class="bg-blue-500 text-white px-4 py-2 rounded-sm mr-2 transition-colors duration-300 hover:bg-blue-600"
+          >
+            View
+          </router-link>
+          <button
+            class="bg-yellow-500 text-white px-4 py-2 rounded-sm mr-2 transition-colors duration-300 hover:bg-yellow-600"
+            @click="toggleEditWebsiteModal(website)"
+          >
+            Update
+          </button>
+          <button
+            class="bg-red-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-red-600"
+            @click="handleDeleteWebsite(website)"
+          >
+            Delete
+          </button>
+          </div>
+        </td>
+        </tr>
+      </tbody>
       </table>
     </div>
 
@@ -70,8 +70,8 @@
         class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
         :class="{ 'hidden': !activeAddWebsiteModal }"
       >
-        <div class="bg-white p-4 rounded shadow-lg">
-        <h5 class="text-xl font-bold mb-4">Add Website</h5>
+        <div class="bg-gray-800 p-4 rounded shadow-lg">
+        <h5 class="text-xl font-bold mb-4 text-white">Add Website</h5>
         <button
           type="button"
           class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
@@ -85,42 +85,42 @@
           stroke="currentColor"
           >
           <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M6 18L18 6M6 6l12 12"
           />
           </svg>
         </button>
         <form @submit.prevent="handleAddSubmit">
           <div class="mb-4">
-          <label for="addWebsiteName" class="block font-bold mb-2">Name</label>
+          <label for="addWebsiteName" class="block font-bold mb-2 text-white">Name</label>
           <input
-            type="text"
-            class="border border-gray-300 rounded px-4 py-2 w-full"
-            id="addWebsiteName"
-            v-model="addWebsiteForm.name"
-            required
+        type="text"
+        class="border border-gray-300 rounded px-4 py-2 w-full"
+        id="addWebsiteName"
+        v-model="addWebsiteForm.name"
+        required
           />
           </div>
           <div class="mb-4">
-          <label for="addWebsiteUrl" class="block font-bold mb-2">URL</label>
+          <label for="addWebsiteUrl" class="block font-bold mb-2 text-white">URL</label>
           <input
-            type="text"
-            class="border border-gray-300 rounded px-4 py-2 w-full"
-            id="addWebsiteUrl"
-            v-model="addWebsiteForm.url"
-            required
+        type="text"
+        class="border border-gray-300 rounded px-4 py-2 w-full"
+        id="addWebsiteUrl"
+        v-model="addWebsiteForm.url"
+        required
           />
           </div>
           <div class="mb-4">
           <input
-            type="checkbox"
-            class="form-checkbox"
-            id="addWebsiteActive"
-            v-model="addWebsiteForm.active"
+        type="checkbox"
+        class="form-checkbox"
+        id="addWebsiteActive"
+        v-model="addWebsiteForm.active"
           />
-          <label class="ml-2" for="addWebsiteActive">Active</label>
+          <label class="ml-2 text-white" for="addWebsiteActive">Active</label>
           </div>
           <div class="flex justify-end">
           <button type="button" class="text-gray-500 hover:text-gray-700 mr-2" @click="toggleAddWebsiteModal">Cancel</button>
@@ -136,8 +136,8 @@
         class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
         :class="{ 'hidden': !activeEditWebsiteModal }"
       >
-        <div class="bg-white p-4 rounded shadow-lg">
-        <h5 class="text-xl font-bold mb-4">Edit Website</h5>
+        <div class="bg-gray-800 p-4 rounded shadow-lg">
+        <h5 class="text-xl font-bold mb-4 text-white">Edit Website</h5>
         <button
           type="button"
           class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
@@ -151,42 +151,42 @@
           stroke="currentColor"
           >
           <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M6 18L18 6M6 6l12 12"
           />
           </svg>
         </button>
         <form @submit.prevent="handleEditSubmit">
           <div class="mb-4">
-          <label for="editWebsiteName" class="block font-bold mb-2">Name</label>
+          <label for="editWebsiteName" class="block font-bold mb-2 text-white">Name</label>
           <input
-            type="text"
-            class="border border-gray-300 rounded px-4 py-2 w-full"
-            id="editWebsiteName"
-            v-model="editWebsiteForm.name"
-            required
+        type="text"
+        class="border border-gray-300 rounded px-4 py-2 w-full"
+        id="editWebsiteName"
+        v-model="editWebsiteForm.name"
+        required
           />
           </div>
           <div class="mb-4">
-          <label for="editWebsiteUrl" class="block font-bold mb-2">URL</label>
+          <label for="editWebsiteUrl" class="block font-bold mb-2 text-white">URL</label>
           <input
-            type="text"
-            class="border border-gray-300 rounded px-4 py-2 w-full"
-            id="editWebsiteUrl"
-            v-model="editWebsiteForm.url"
-            required
+        type="text"
+        class="border border-gray-300 rounded px-4 py-2 w-full"
+        id="editWebsiteUrl"
+        v-model="editWebsiteForm.url"
+        required
           />
           </div>
           <div class="mb-4">
           <input
-            type="checkbox"
-            class="form-checkbox"
-            id="editWebsiteActive"
-            v-model="editWebsiteForm.active"
+        type="checkbox"
+        class="form-checkbox"
+        id="editWebsiteActive"
+        v-model="editWebsiteForm.active"
           />
-          <label class="ml-2" for="editWebsiteActive">Active</label>
+          <label class="ml-2 text-white" for="editWebsiteActive">Active</label>
           </div>
           <div class="flex justify-end">
           <button type="button" class="text-gray-500 hover:text-gray-700 mr-2" @click="toggleEditWebsiteModal">Cancel</button>

@@ -1,5 +1,5 @@
 <template>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 py-6">
         <div>
             <h1 class="text-3xl font-bold mb-4 text-dark">Website Detail</h1>
 
