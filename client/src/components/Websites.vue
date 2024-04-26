@@ -11,58 +11,25 @@
           Add Website
         </button>
       </div>
-      <table class="table-auto w-full bg-gray-800 p-8 rounded-lg">
-      <thead>
-        <tr class="bg-blue-400 text-white">
-        <th scope="col" @click="handleSort('name')" class="cursor-pointer text-left py-2 px-4">
-          Name
-          <i v-if="sortBy === 'name'" :class="reverse ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
-        </th>
-        <th scope="col" @click="handleSort('url')" class="cursor-pointer text-left py-2 px-4">
-          URL
-          <i v-if="sortBy === 'url'" :class="reverse ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
-        </th>
-        <th scope="col" @click="handleSort('active')" class="cursor-pointer text-left py-2 px-4">
-          Status
-          <i v-if="sortBy === 'active'" :class="reverse ? 'fas fa-sort-up' : 'fas fa-sort-down'"></i>
-        </th>
-        <th class="text-left py-2 px-4">Action</th>
-        </tr>
-      </thead>
-      <tbody class="bg-gray-900 p-4">
-        <tr v-for="(website, index) in websites" :key="index">
-        <td class="py-2 px-4 text-white">{{ website.name }}</td>
-        <td class="py-2 px-4 text-white">{{ website.url }}</td>
-        <td class="py-2 px-4">
-          <span v-if="website.active" class="text-green-500">Active</span>
-          <span v-else class="text-red-500">Inactive</span>
-        </td>
-        <td class="py-2 px-4">
-          <div class="flex items-center">
-          <router-link
-            :to="`/website/${website.id}`"
-            class="bg-blue-500 text-white px-4 py-2 rounded-sm mr-2 transition-colors duration-300 hover:bg-blue-600"
-          >
-            View
-          </router-link>
-          <button
-            class="bg-yellow-500 text-white px-4 py-2 rounded-sm mr-2 transition-colors duration-300 hover:bg-yellow-600"
-            @click="toggleEditWebsiteModal(website)"
-          >
-            Update
-          </button>
-          <button
-            class="bg-red-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-red-600"
-            @click="handleDeleteWebsite(website)"
-          >
-            Delete
-          </button>
-          </div>
-        </td>
-        </tr>
-      </tbody>
-      </table>
+      <div class="card">
+        <DataTable :value="websites" :paginator="true" :rows="10" :rowsPerPageOptions="[5, 10, 20]">
+            <Column field="name" header="Name" sortable></Column>
+            <Column field="url" header="URL" sortable></Column>
+            <Column field="active" header="Status" sortable></Column>
+            <Column header="Action">
+                <template #body="slotProps">
+                    <router-link :to="`/website/${slotProps.data.id}`"> 
+                      <Button label="MANAGE" class="bg-blue-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-blue-600"></Button>
+                    </router-link>
+                    <Button label="EDIT" @click="toggleEditWebsiteModal(slotProps.data)" class="bg-yellow-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-yellow-600"></Button>
+                    <Button label="Delete"  @click="handleDeleteWebsite(slotProps.data)" class="bg-red-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-red-600"></Button>
+                  </template>
+            </Column>
+        </DataTable>
+      </div>
+
     </div>
+
 
       <!-- Add Website Modal -->
       <div
@@ -199,6 +166,7 @@
 
 
 </template>
+
 
 <script>
 import axios from "axios";
@@ -364,3 +332,20 @@ export default {
   
 };
 </script>
+
+<style scoped>
+.card {
+  background-color: #1a202c;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin: 1rem;
+  padding: 1rem;
+}
+.button-success {
+  background-color: #2b6cb0;
+  border-radius: 0.25rem;
+  color: white;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+}
+</style>

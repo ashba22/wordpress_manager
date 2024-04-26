@@ -14,10 +14,5 @@ import Navbar from './components/Navbar.vue'
 
 
 <style>
-input, textarea, select, button {
-  background-color: #1a202c;
-  border-color: #2d3748;
-  color: #e2e8f0;
-}
-
+/* make input like text area etc for dark mode */
 </style>
