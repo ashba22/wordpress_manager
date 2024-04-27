@@ -1,75 +1,158 @@
-<template>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 py-6">
-        <div>
-            <h1 class="text-3xl font-bold mb-4 text-dark">Website Detail</h1>
 
-            <div class="bg-gray-900 shadow-md rounded-lg p-6">
-                <div class="flex justify-start mb-6">
-                    <img v-if="website.favicon" :src="'data:image/x-icon;base64,' + website.favicon" alt="favicon" class="h-16 w-16 rounded-full" />
-                    <div v-else class="h-16 w-16 rounded-full bg-gray-800"></div> <!-- Placeholder for favicon if not available -->
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-lg font-semibold mb-2 text-white">Website ID:</p>
-                        <p class="text-gray-300">{{ website.id }}</p>
-                    </div>
-                    <div>
-                        <p class="text-lg font-semibold mb-2 text-white">Website Name:</p>
-                        <p class="text-gray-300">{{ website.name }}</p>
-                    </div>
-                    <div>
-                        <p class="text-lg font-semibold mb-2 text-white">Website URL:</p>
-                        <p class="text-gray-300">{{ website.url }}</p>
-                    </div>
-                    <div>
-                        <p class="text-lg font-semibold mb-2 text-white">Website Description:</p>
-                        <p class="text-gray-300">{{ website.description }}</p>
-                    </div>
-                    <div class="col-span-2">
-                        <p class="text-lg font-semibold mb-2 text-white">Website Status:</p>
-                        <p :class="{
-                            'text-green-500': website.status_code === 200,
-                            'text-yellow-500': website.status_code >= 400 && website.status_code < 500,
-                            'text-red-500': website.status_code >= 500 && website.status_code < 600,
-                            'text-gray-500': ![200, 400, 500].includes(website.status_code)
-                        }">
-                            <span class="inline-block mr-1 animate-pulse">●</span>
-                            {{ website.status_code === 200 ? 'Website is up and running' : 
-                               website.status_code >= 400 && website.status_code < 500 ? 'Client error: Website may have an issue on the client side' : 
-                               website.status_code >= 500 && website.status_code < 600 ? 'Server error: Website may have an issue on the server side' : 
-                               'Unknown status: Unable to determine website status' }}
-                        </p>
+    <template>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+            <div v-if="website.updates && website.updates.core.length > 0" class="lg:col-span-3">
+                <div class="bg-gray-400 text-white p-4 rounded-lg shadow">
+                    <div class="bg-gray-800 rounded-lg p-4">
+                        <div v-for="update in website.updates.core" :key="update.version" class="flex flex-row justify-between items-center bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg p-3 mb-2">
+                            <div class="flex flex-col">
+                                <h3 class="text-xl font-bold text-green-400">Wordpress Core Update</h3>
+                                <h4 class="text-lg font-bold">WordPress Core</h4>
+                                <p class="text-gray-300">Current Version: {{ update.current }}</p>
+                                <a :href="update.download" class="text-blue-500 hover:text-blue-300">Manual Update download link</a>
+                            </div>
+                            <button class="bg-green-500 hover:bg-green-400 text-white px-3 py-2 rounded focus:outline-none transition ease-in-out">
+                                Update Now
+                            </button>
+                        </div>
+                       
                     </div>
                 </div>
             </div>
-        </div>
-        <div>
-            <h1 class="text-3xl font-bold mb-4 text-dark">Website Plugins</h1>
-            <div class="bg-gray-900 shadow-md rounded-lg p-6">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-700">
-                        <thead>
-                            <tr>
-                                <th class="px-4 py-2 text-left text-gray-300">Name</th>
-                                <th class="px-4 py-2 text-left text-gray-300">Version</th>
-                                <th class="px-4 py-2 text-left text-gray-300">Author</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="plugin in website.plugins" :key="plugin.name">
-                                <td class="px-4 py-2 text-gray-300">{{ plugin.name.substring(0, 20) }}</td>
-                                <td class="px-4 py-2 text-gray-300">{{ plugin.version }}</td>
-                                <td class="px-4 py-2 text-gray-300">{{ plugin.author }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            
+
+            <div class="col-span-1 lg:col-span-3">
+                <h3 class="text-3xl lg:text-4xl font-bold mb-4 text-white">Website Details</h3>
+                <div class="bg-gray-800 border border-gray-700 shadow-lg rounded-lg p-6">
+                    
+                    <div class="flex justify-start mb-6">
+                        <div v-if="website.favicon" class="h-16 w-16 rounded-full overflow-hidden">
+                            <img :src="'data:image/x-icon;base64,' + website.favicon" alt="favicon" class="h-full w-full object-cover" />
+                        </div>
+                        <div v-else class="h-16 w-16 rounded-full bg-gray-800 flex items-center justify-center text-white text-xl">
+                            <i class="pi pi-image"></i> <!-- Placeholder icon -->
+                        </div>
+                    </div>
+    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card title="Website Info" class="bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg">
+                            <template #title>
+                                <h2 class="text-lg font-bold text-white">Website Info</h2>
+                            </template>
+                            <template #content>
+                                <div class="flex flex-col">
+                                    <div class="flex justify-between mb-2" v-for="(value, key) in website.info" :key="key">
+                                        <span class="text-gray-300 font-semibold">{{ key }}:</span>
+                                        <span class="text-gray-300">{{ value }}</span>
+                                    </div>
+                                </div>
+                            </template>
+                        </Card>
+                        <Card title="Website Statistics" class="bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg">
+                            <template #title>
+                                <h2 class="text-lg font-bold text-white">Website Statistics</h2>
+                            </template>
+                            <template #content>
+                                <div class="flex flex-col">
+                                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        <div class="flex items-center justify-center bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg p-4">
+                                            <div>
+                                                <i class="pi pi-folder-plus text-4xl text-white"></i>
+                                                <span class="text-gray-300 block mt-2">{{ website.plugins_count }} Plugins</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-center bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg p-4">
+                                            <div>
+                                                <i class="pi pi-palette text-4xl text-white"></i>
+                                                <span class="text-gray-300 block mt-2">{{ website.themes_count }} Themes</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-center bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg p-4">
+                                            <div>
+                                                <i class="pi pi-file text-4xl text-white"></i>
+                                                <span class="text-gray-300 block mt-2">{{ website.posts_count }} Posts</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-center bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg p-4">
+                                            <div>
+                                                <i class="pi pi-file-o text-4xl text-white"></i>
+                                                <span class="text-gray-300 block mt-2">{{ website.pages_count }} Pages</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-center bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg p-4">
+                                            <div>
+                                                <i class="pi pi-users text-4xl text-white"></i>
+                                                <span class="text-gray-300 block mt-2">{{ website.users_count }} Users</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-center bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg p-4">
+                                            <div>
+                                                <i class="pi pi-image text-4xl text-white"></i>
+                                                <span class="text-gray-300 block mt-2">{{ website.media_count }} Media</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-center bg-gray-700 hover:bg-gray-600 transition duration-300 ease-in-out shadow-md rounded-lg p-4">
+                                            <div>
+                                                <i class="pi pi-comment text-4xl text-white"></i>
+                                                <span class="text-gray-300 block mt-2">{{ website.comments_count }} Comments</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                          
+                        </Card>
+                    </div>
                 </div>
             </div>
+    
+            <div class="col-span-1 lg:col-span-3 mt-8">
+            <h3 class="text-3xl font-bold mb-4 text-dark">Website Plugins</h3>
+            <DataTable :value="website.plugins" :paginator="true" :rows="10" class="bg-gray-900 shadow-md rounded-lg px-6 py-4 mb-3">
+            <Column field="name" header="Name" :sortable="true" class="text-gray-300" />
+            <Column field="version" header="Version" :sortable="true" class="text-gray-300" />
+            <Column field="author" header="Author" :sortable="true" class="text-gray-300" />
+            </DataTable>
+            <h3 class="text-3xl font-bold mb-4 text-dark">Website Themes</h3>
+            <DataTable :value="website.themes" :paginator="true" :rows="10" class="bg-gray-900 shadow-md rounded-lg px-6 py-4 mb-3">
+            <Column field="name" header="Name" :sortable="true" class="text-gray-300" />
+            <Column field="version" header="Version" :sortable="true" class="text-gray-300" />
+            <Column field="author" header="Author" :sortable="true" class="text-gray-300" />
+            </DataTable>
+            <h3 class="text-3xl font-bold mb-4 text-dark">Website Users</h3>
+            <DataTable :value="website.users" :paginator="true" :rows="10" class="bg-gray-900 shadow-md rounded-lg px-6 py-4 mb-3">
+            <Column field="user_login" header="User Login" :sortable="true" class="text-gray-300" />
+            <Column field="user_email" header="User Email" :sortable="true" class="text-gray-300" />
+            <Column field="user_registered" header="User Registered" :sortable="true" class="text-gray-300" />
+            </DataTable>
+            <h3 class="text-3xl font-bold mb-4 text-dark">Website Media</h3>
+            <DataTable :value="website.media" :paginator="true" :rows="10" class="bg-gray-900 shadow-md rounded-lg px-6 py-4 mb-3">
+            <Column field="media_title" header="Media Title" :sortable="true" class="text-gray-300" />
+            <Column field="media_url" header="Media URL" :sortable="true" class="text-gray-300" />
+            <Column field="media_type" header="Media Type" :sortable="true" class="text-gray-300" />
+            </DataTable>
+            <h3 class="text-3xl font-bold mb-4 text-dark">Website Comments</h3>
+            <DataTable :value="website.comments" :paginator="true" :rows="10" class="bg-gray-900 shadow-md rounded-lg px-6 py-4 mb-3">
+            <Column field="comment_author" header="Author" :sortable="true" class="text-gray-300" />
+            <Column field="comment_date" header="Date" :sortable="true" class="text-gray-300" />
+            <Column field="comment_content" header="Content" :sortable="true" class="text-gray-300" />
+            <Column field="comment_post_title" header="Post Title" :sortable="true" class="text-gray-300" />
+            </DataTable>
+            <h3 class="text-3xl font-bold mb-4 text-dark">Website Posts</h3>
+            <DataTable :value="website.posts" :paginator="true" :rows="10" class="bg-gray-900 shadow-md rounded-lg px-6 py-4 mb-3">
+            <Column field="post_title" header="Title" :sortable="true" class="text-gray-300" />
+            <Column field="post_content" header="Content" :sortable="true" class="text-gray-300" />
+            <Column field="post_date" header="Date" :sortable="true" class="text-gray-300" />
+            </DataTable>
+            <h3 class="text-3xl font-bold mb-4 text-dark">Website Pages</h3>
+            <DataTable :value="website.pages" :paginator="true" :rows="10" class="bg-gray-900 shadow-md rounded-lg px-6 py-4 mb-3">
+            <Column field="page_title" header="Title" :sortable="true" class="text-gray-300" />
+            <Column field="page_content" header="Content" :sortable="true" class="text-gray-300" />
+            <Column field="page_date" header="Date" :sortable="true" class="text-gray-300" />
+            </DataTable>
+
         </div>
-        
     </div>
- 
 </template>
 
 
@@ -78,13 +161,17 @@
 
 <script>
 import axios from "axios";
-
+import Button from "primevue/button";
 
 export default {
     props: {
         id: {
             type: String,
             required: true
+        },
+        progressbar: {
+            type: Boolean,
+            default: true
         }
     },
     data() {
@@ -94,11 +181,23 @@ export default {
     },
     methods: {
         getWebsiteDetail() {
+            /// show the progress bar
+            var progressBar = document.querySelector(".p-progressbar");
+            progressBar.style.display = "block";
             axios.get(`http://localhost:5001/website/${this.id}`)
                 .then((response) => {
                     this.website = response.data.website;
-                   
-                    console.log(this.website.name);
+                    console.log(this.website.updates);
+                    this.website.plugins_count = this.website.plugins.length;
+                    this.website.themes_count = this.website.themes.length;
+                    this.website.posts_count = this.website.posts.length;
+                    this.website.pages_count = this.website.pages.length;
+                    this.website.users_count = this.website.users.length;
+                    this.website.media_count = this.website.media.length;
+                    this.website.comments_count = this.website.comments.length;
+
+                    // hide the progress bar
+                    progressBar.style.display = "none";
                 })
                 .catch((error) => {
                     console.log(error);

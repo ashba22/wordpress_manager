@@ -5,6 +5,8 @@ import '@fortawesome/fontawesome-free/css/all.css'
 import 'tailwindcss/tailwind.css'
 import 'primevue/resources/themes/aura-dark-green/theme.css'
 import 'vue-toast-notification/dist/theme-default.css'
+import 'primevue/resources/primevue.min.css'
+import 'primeicons/primeicons.css'
 
 import ToastPlugin from 'vue-toast-notification'
 import PrimeVue from 'primevue/config';
@@ -20,6 +22,7 @@ import Card from 'primevue/card'
 import InputNumber from 'primevue/inputnumber'
 import Dialog from 'primevue/dialog'
 import Ripple from 'primevue/ripple'
+import ProgressBar from 'primevue/progressbar'
 
 const app = createApp(App);
 app.component('Menubar', Menubar);
@@ -33,16 +36,12 @@ app.component('Button', Button);
 app.component('Card', Card);
 app.component('InputNumber', InputNumber);
 app.component('Dialog', Dialog);
-
-
-
+app.component('ProgressBar', ProgressBar);
 
 app.use(PrimeVue, {
     unstyled: false,
     inputStyle: 'filled',
     ripple: true
-
-
 });
 app.use(router)
 app.use(ToastPlugin)

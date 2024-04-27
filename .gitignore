@@ -1,2 +1,4 @@
 /LICENSE
 /server_rust
+.DS_Store
+server/__pycache__/app.cpython-312.pyc

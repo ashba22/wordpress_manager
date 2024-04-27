@@ -1,6 +1,8 @@
 <template>
   <div>
     <Navbar />
+    <ProgressBar mode="indeterminate" style="height: 6px; display: none;" />
+   
     <RouterView />
   </div>
 </template>
