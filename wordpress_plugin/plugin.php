@@ -67,9 +67,6 @@ function wp_manager_all_updates($request) {
     $plugin_updates = get_plugin_updates();
     $theme_updates = get_theme_updates();
 
-
-
-
     $data = array(
         'core'   => $updates,
         'plugins' => $plugin_updates,
@@ -175,7 +172,6 @@ function wp_manager_all_pages($request) {
         // Add page data to the array
         $pages_data[] = array(
             'page_title'    => $page->post_title,
-            'page_content'  => $page->post_content,
             'page_date'     => $page->post_date,
         );
     }
@@ -202,7 +198,6 @@ function wp_manager_all_posts($request) {
         // Add post data to the array
         $posts_data[] = array(
             'post_title'    => $post->post_title,
-            'post_content'  => $post->post_content,
             'post_date'     => $post->post_date,
         );
     }

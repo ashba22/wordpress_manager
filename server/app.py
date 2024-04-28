@@ -55,10 +55,8 @@ def all_websites():
         response_object['message'] = 'Website added!'
     else:
         # Sorting logic
-        sort_by = request.args.get('sort_by', 'name')
-        reverse = request.args.get('reverse', 'false').lower() == 'true'
-        sorted_websites = sorted(WEBSITES, key=lambda x: x[sort_by], reverse=reverse)
-        response_object['websites'] = sorted_websites
+
+        response_object['websites'] = WEBSITES
     return jsonify(response_object)
 
 @app.route('/website/<website_id>', methods=['PUT', 'DELETE', 'GET'])
@@ -69,84 +67,48 @@ def single_website(website_id):
         website = next((site for site in WEBSITES if site['id'] == website_id), None)
         if website:
             response_object['website'] = website
-            try:
-                response = requests.get(website['url'])
-                website['status_code'] = response.status_code
-                favicon_url = f"{website['url']}/favicon.ico"
-                response = requests.get(favicon_url)
-                favicon_base64 = base64.b64encode(response.content).decode('utf-8')
+           
+           
+       
+            favicon_url = f"{website['url']}/favicon.ico"
+            plugins_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/installed-plugins?api_key={website['api_key']}"
+            themes_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/installed-themes?api_key={website['api_key']}"
+            website_info_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/website-info?api_key={website['api_key']}"
+            posts_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/posts?api_key={website['api_key']}"
+            pages_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/pages?api_key={website['api_key']}"
+            comments_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/comments?api_key={website['api_key']}"
+            users_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/users?api_key={website['api_key']}"
+            media_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/media?api_key={website['api_key']}"
+            updates_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/updates?api_key={website['api_key']}"
+            
+      
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Submitting concurrent requests
+                futures = [
+                    executor.submit(requests.get, url) for url in [favicon_url, plugins_endpoint, themes_endpoint, website_info_endpoint, posts_endpoint, pages_endpoint, comments_endpoint, users_endpoint, media_endpoint, updates_endpoint]
+                ]
+                
+                # Getting results from concurrent requests
+                results = [future.result() for future in futures]
+                
+                website['status_code'] = results[0].status_code
+                favicon_base64 = base64.b64encode(results[0].content).decode('utf-8')
                 website['favicon'] = favicon_base64
-                plugins_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/installed-plugins?api_key={website['api_key']}"
-                themes_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/installed-themes?api_key={website['api_key']}"
-                website_info_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/website-info?api_key={website['api_key']}"
-                posts_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/posts?api_key={website['api_key']}"
-                pages_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/pages?api_key={website['api_key']}"
-                comments_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/comments?api_key={website['api_key']}"
-                users_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/users?api_key={website['api_key']}"
-                media_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/media?api_key={website['api_key']}"
-                updates_endpoint = f"{website['url']}/wp-json/wp-manager-plugin/v1/updates?api_key={website['api_key']}"
-                def fetch_data(url, result):
-                    try:
-                        response = requests.get(url)
-                        response.raise_for_status()
-                        result.append(response.json())
-                    except requests.exceptions.RequestException as e:
-                        result.append(None)
+                website['plugins'] = results[1].json()
+                website['themes'] = results[2].json()
+                website['info'] = results[3].json()
+                website['posts'] = results[4].json()
+                website['pages'] = results[5].json()
+                website['comments'] = results[6].json()
+                website['users'] = results[7].json()
+                website['media'] = results[8].json()
+                website['updates'] = results[9].json()
+                website['url'] = website['url']
+        else:
+            response_object['status'] = 'error'
+            response_object['message'] = 'Website not found!'
 
-                plugins_result = []
-                themes_result = []
-                website_result = []
-                posts_result = []
-                pages_result = []
-                comments_result = []
-                users_result = []
-                media_result = []
-                updates_result = []
 
-                plugins_thread = threading.Thread(target=fetch_data, args=(plugins_endpoint, plugins_result))
-                themes_thread = threading.Thread(target=fetch_data, args=(themes_endpoint, themes_result))
-                website_thread = threading.Thread(target=fetch_data, args=(website_info_endpoint, website_result))
-                posts_thread = threading.Thread(target=fetch_data, args=(posts_endpoint, posts_result))
-                pages_thread = threading.Thread(target=fetch_data, args=(pages_endpoint, pages_result))
-                comments_thread = threading.Thread(target=fetch_data, args=(comments_endpoint, comments_result))
-                users_thread = threading.Thread(target=fetch_data, args=(users_endpoint, users_result))
-                media_thread = threading.Thread(target=fetch_data, args=(media_endpoint, media_result))
-                updates_thread = threading.Thread(target=fetch_data, args=(updates_endpoint, updates_result))
-                website_thread.start()
-                plugins_thread.start()
-                themes_thread.start()
-                posts_thread.start()
-                pages_thread.start()
-                comments_thread.start()
-                users_thread.start()
-                media_thread.start()
-                updates_thread.start()
-
-                website_thread.join()
-                plugins_thread.join()
-                themes_thread.join()
-                posts_thread.join()
-                pages_thread.join()
-                comments_thread.join()
-                users_thread.join()
-                media_thread.join()
-                updates_thread.join()
-
-                website['plugins'] = plugins_result[0]
-                website['themes'] = themes_result[0]
-                website['info'] = website_result[0]
-                website['posts'] = posts_result[0]
-                website['pages'] = pages_result[0]
-                website['comments'] = comments_result[0]
-                website['users'] = users_result[0]
-                website['media'] = media_result[0]
-                website['updates'] = updates_result[0]
-                    
-            except requests.exceptions.RequestException as e:
-                website['status_code'] = 404
-                response_object['status'] = 'error'
-                response_object['message'] = 'Error occurred while fetching website data'
-    
     if request.method == 'PUT':
         post_data = request.get_json()
         remove_website(website_id)
@@ -166,6 +128,7 @@ def single_website(website_id):
             response_object['message'] = 'Website not found!'
     
     return jsonify(response_object)
+
 
 if __name__ == '__main__':
     app.run()
