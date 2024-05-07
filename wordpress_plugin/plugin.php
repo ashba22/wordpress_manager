@@ -2,7 +2,7 @@
 /*
 Plugin Name: WP Manager Plugin
 Description: Provides endpoints to manage WordPress settings and data.
-Version: 1.1
+Version: 1.0
 Author: Ashba22
 License: GPL2
 */
@@ -14,6 +14,9 @@ require_once( ABSPATH . 'wp-admin/includes/update.php' );
 require_once( ABSPATH . 'wp-admin/includes/post.php' );
 require_once( ABSPATH . 'wp-admin/includes/user.php' );
 require_once( ABSPATH . 'wp-admin/includes/media.php' );
+require_once( ABSPATH . 'wp-admin/includes/comment.php' );
+require_once( ABSPATH . 'wp-includes/pluggable.php' );
+
 
 add_action( 'rest_api_init', function () {
     register_rest_route( 'wp-manager-plugin/v1', '/installed-plugins/', array(
@@ -53,7 +56,14 @@ add_action( 'rest_api_init', function () {
         'methods'  => 'GET',
         'callback' => 'wp_manager_all_updates',
     ) );
-    
+    register_rest_route( 'wp-manager-plugin/v1', '/change-plugin-status/', array(
+        'methods'  => 'POST',
+        'callback' => 'wp_manager_plugin_change_plugin_status',
+    ) );
+    register_rest_route( 'wp-manager-plugin/v1', '/toggle-plugin/', array(
+        'methods'  => 'POST',
+        'callback' => 'wp_manager_toggle_plugin',
+    ) );
 } );
 
 
@@ -66,6 +76,9 @@ function wp_manager_all_updates($request) {
     $updates = get_core_updates();
     $plugin_updates = get_plugin_updates();
     $theme_updates = get_theme_updates();
+
+
+
 
     $data = array(
         'core'   => $updates,
@@ -93,9 +106,10 @@ function wp_manager_all_comments($request) {
         // Add comment data to the array
         $comments_data[] = array(
             'comment_author'    => $comment->comment_author,
-            'comment_content'   => $comment->comment_content,
+            'comment_content'   => wp_strip_all_tags( wp_trim_words( $comment->comment_content, 10, '' ) ) . '...',
             'comment_date'      => $comment->comment_date,
             'comment_post_title' => get_the_title($comment->comment_post_ID),
+            'comment_status' => $comment->comment_approved == 1 ? 'Approved' : 'Pending Approval',
         );
     }
 
@@ -123,6 +137,7 @@ function wp_manager_all_media($request) {
             'media_title'    => $media_item->post_title,
             'media_url'      => $media_item->guid,
             'media_date'     => $media_item->post_date,
+            'media_type'     => $media_item->post_mime_type,
         );
     }
 
@@ -172,13 +187,17 @@ function wp_manager_all_pages($request) {
         // Add page data to the array
         $pages_data[] = array(
             'page_title'    => $page->post_title,
+            'page_url'      => get_permalink( $page->ID ),
+            'page_image'    => get_the_post_thumbnail_url($page->ID), // 'https://www.example.com/wp-content/uploads/2021/01/image.jpg
             'page_date'     => $page->post_date,
+            'page_status'   => $page->post_status,
         );
     }
 
     // Return the array of page data
     return rest_ensure_response( $pages_data );
 }
+
 
 function wp_manager_all_posts($request) {
     // Validate API key
@@ -198,9 +217,16 @@ function wp_manager_all_posts($request) {
         // Add post data to the array
         $posts_data[] = array(
             'post_title'    => $post->post_title,
+            'post_url'      => get_permalink( $post->ID ), 
+            'post_image'    => get_the_post_thumbnail_url($post->ID), // 'https://www.example.com/wp-content/uploads/2021/01/image.jpg
             'post_date'     => $post->post_date,
+            'post_status' => $post->post_status,
+            
+
+            
         );
     }
+
 
     // Return the array of post data
     return rest_ensure_response( $posts_data );
@@ -280,20 +306,26 @@ function wp_manager_plugin_get_installed_plugins_data( $request ) {
 
     $plugins_data = array();
 
+    $plugin_updates = get_plugin_updates();
+
     // Loop through each installed plugin
     foreach ( $installed_plugins as $plugin_path => $plugin_data ) {
+
         // Add plugin data to the array
         $plugins_data[] = array(
             'name'    => $plugin_data['Name'],
             'version' => $plugin_data['Version'],
+            'path'    => $plugin_path, 
             'author'  => $plugin_data['Author'],
-
+            'status'  => is_plugin_active( $plugin_path ) ? 'Active' : 'Inactive',
+            'updates' => isset($plugin_updates[$plugin_path]) ? 'Available' : 'No Updates Available',
         );
     }
 
     // Return the array of plugin data
     return rest_ensure_response( $plugins_data );
 }
+
 
 
 function wp_manager_plugin_validate_api_key( $request ) {
@@ -351,4 +383,53 @@ function wp_manager_plugin_generate_api_key() {
 }
 
 
+/// create a function to deactivate or activate the plugin based on the status and plugin name provided in the request
+
+function wp_manager_toggle_plugin($request) {
+    // Validate API key
+    if ( ! wp_manager_plugin_validate_api_key( $request ) ) {
+        return new WP_Error( 'rest_forbidden', esc_html__( 'Invalid API Key', 'text-domain' ), array( 'status' => 401 ) );
+    }
+    $data = $request->get_json_params();
+
+    // Check if the plugin path is provided
+    if ( ! isset( $data['path'] ) ) {
+        return new WP_Error( 'rest_missing_plugin', esc_html__( 'Plugin path is required', 'text-domain' ), array( 'status' => 400 ) );
+    }
+
+
+    $plugin = $data['path'];
+    $name = $data['name'];
+    $path = $plugin;
+
+    /// if name = WP Manager Plugin, then return an error message because we don't want to deactivate this plugin
+    if ($name == 'WP Manager Plugin') {
+        return $message = 'You cannot deactivate the WP Manager Plugin, it is required for the API to work';
+    }
+
+
+
+    $current_status = is_plugin_active( $path ) ? 'active' : 'inactive';
+    
+    if ( $current_status == 'inactive' ) {
+        $result = activate_plugin( $plugin );
+        if ( is_wp_error( $result ) ) {
+            $message = 'Error activating plugin: ' . $result->get_error_message();
+        } else {
+            $message = 'Plugin ' . $name . ' ' . $path . ' activated successfully';
+        }
+    } else {
+        $result = deactivate_plugins( $plugin );
+        if ( is_wp_error( $result ) ) {
+            $message = 'Error deactivating plugin: ' . $result->get_error_message();
+        } else {
+            $message = 'Plugin' . $name . ' ' . $path . ' deactivated successfully';
+        }
+    }
+ 
+    return rest_ensure_response( $message );
+}
+
+
 register_activation_hook( __FILE__, 'wp_manager_plugin_generate_api_key' );
+

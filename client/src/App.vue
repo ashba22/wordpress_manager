@@ -1,9 +1,12 @@
 <template>
   <div>
-    <Navbar />
-    <ProgressBar mode="indeterminate" style="height: 3px; display: none;" />
-   
-    <RouterView />
+    <div class="container mx-auto">
+      <Navbar />
+      <ProgressBar mode="indeterminate" style="height: 6px; display: none;" />
+      <RouterView />
+    </div>
+  
+
   </div>
 </template>
 

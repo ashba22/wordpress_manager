@@ -1,10 +1,10 @@
 
 <template>
-  <div class="card"> 
-      <Menubar :model="items" class="bg-gray-900 text-color-white" :start="start" :item="item" :end="end">
+  <div class="card">
+      <Menubar :model="items" :start="start" :item="item" :end="end" class="shadow-lg">
         <template #start>
           <div class="flex items-center">
-            <img src="/logo.svg" alt="logo" class="w-16 h-16 rounded-full shadow-lg bg-gray-800 text-color-white" />
+            <img src="/logo.svg" alt="logo" class="w-16 h-16" />
             <span class="ml-2 text-color-white font-bold"><b>WPManager</b></span>
           </div>
         </template>
@@ -37,3 +37,9 @@ const items = ref([
   },
 ]);
 </script>
+
+<style scoped>
+p-menubar {
+border: 1px solid #e0e0e0;
+}
+</style>

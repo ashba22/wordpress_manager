@@ -3,10 +3,12 @@ import App from './App.vue'
 import router from './router'
 import '@fortawesome/fontawesome-free/css/all.css'
 import 'tailwindcss/tailwind.css'
-import 'primevue/resources/themes/aura-dark-indigo/theme.css'
+import 'primevue/resources/themes/aura-dark-amber/theme.css'
 import 'vue-toast-notification/dist/theme-default.css'
 import 'primevue/resources/primevue.min.css'
 import 'primeicons/primeicons.css'
+/// cors error
+
 
 import ToastPlugin from 'vue-toast-notification'
 import PrimeVue from 'primevue/config';
