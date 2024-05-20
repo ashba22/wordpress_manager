@@ -1,125 +1,130 @@
 <template>
-    <div class="grid gap-4">
-        <div class="col-span-5">
-            <div class="flex items-center justify-between py-4 px-2 rounded-lg mt-3">
-                <!-- WordPress Core Update Section -->
-                <div v-if="website.updates && website.updates.core.length > 0" class="lg:col-span-3">
-                    <div class="p-1 rounded-lg">
-                        <div v-for="update in website.updates.core" :key="update.version"
-                            class="flex flex-row justify-between items-center hover:bg-gray-100 transition duration-300 ease-in-out rounded-lg p-3 mb-2">
-                            <div class="flex flex-col">
-                                <h2 class="text-xl font-bold text-green-400">Wordpress Core Update</h2>
-                                <p>Current / Latest Version: {{ update.current }} / {{ update.version }}</p>
-                            </div>
-                            <button
-                                class="bg-green-500 hover:bg-green-400 px-3 py-2 rounded focus:outline-none transition ease-in-out ml-4">
-                                Update Now
-                            </button>
+    <!-- TODO: Create Modules for each element-->
+    <div class="d-flex flex-row flex-wrap">
+
+
+        
+        <div class="grid mt-2 mx-auto surface-0">
+            <div class="col-12 lg:col-6">
+                <div class="grid">
+                    <div class="col mb-2">
+                        <h1>Website: {{ website.name }}</h1>
+                        <div class="flex gap-2">
+                            <Button type="button" key="view" class="p-button-success"
+                                :href="website.url" target="_blank" rel="noopener noreferrer">
+                                <i class="pi pi-external-link mr-2"></i> View Website
+                            </Button>
+
+                            <Button type="button" key="edit" class="p-button-warning"
+                                :href="`/website/${website.id}`">
+                                <i class="pi pi-pencil mr-2"></i> Edit Website
+                            </Button>
+
+                            <Button type="button" key="admin" class="p-button-secondary"
+                                :href="website.url + '/wp-admin'">
+                                <i class="pi pi-cog mr-2"></i> WP Admin
+                            </Button>
+                            
                         </div>
                     </div>
                 </div>
-                <div v-else class="lg:col-span-3 p-1 rounded-lg">
-                    <h3>No WordPress Core updates available.</h3>
+                <div class="grid gap-2 p-2 rounded-3">
+                    <div v-for="(item, index) in [
+                        { icon: 'pi pi-folder-plus', label: 'Plugins', count: website.plugins_count },
+                        { icon: 'pi pi-palette', label: 'Themes', count: website.themes_count },
+                        { icon: 'pi pi-file', label: 'Posts', count: website.posts_count },
+                        { icon: 'pi pi-file-o', label: 'Pages', count: website.pages_count },
+                        { icon: 'pi pi-users', label: 'Users', count: website.users_count },
+                        { icon: 'pi pi-image', label: 'Media', count: website.media_count },
+                        { icon: 'pi pi-comment', label: 'Comments', count: website.comments_count }
+                    ]" :key="index" class="flex flex-column align-items-center justify-content-center p-3 hover:surface-100 transition-duration-2s cursor-pointer">
+                        <i :class="[item.icon, 'text-2xl']"></i>
+                        <span class="mt-1 text-sm">{{ item.label }}: {{ item.count }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12 lg:col-6">
+                <h1 class="text-2xl font-bold">Website Info</h1>
+                <div class="grid gap-3 rounded-3 p-2">
+                  
+                    <div v-for="(value, key) in website.info" :key="key" class="flex justify-content-between align-items-center p-2 border-round surface-100">
+                        <span class="font-bold">{{ key }}:</span>
+                        <Badge :value="value" class="ml-2" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="surface-50 py-2 px-4">
+            <h2 class="my-2">
+            Updates <i class="pi pi-arrow-up"></i>
+            </h2>
+            <hr>
+
+            <div class="grid">
+                <!-- WordPress Core Update Section -->
+                <div class="col-12 md:col-4">
+                    <div v-if="website.updates && website.updates.core.length > 0" class="card rounded shadow ">
+                    <div v-for="update in website.updates.core" :key="update.version" class="flex flex-col align-items-center">
+                        <h2 class="text-xl font-bold text-primary">
+                        WordPress Core Update: {{ update.version }}
+                        </h2>
+                    </div>
+                    </div>
+                    <div v-else class="card rounded shadow ">
+                    <h3 class="text-center text-muted">No WordPress Core updates available.</h3>
+                    </div>
                 </div>
 
                 <!-- Plugins Update Section -->
-                <div v-if="plugins_update_bool === true" class="lg:col-span-3">
-                    <div class="p-1 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="pi pi-folder-plus"></i>
-                            <h3 class="ml-2">Plugins Updates: {{ website.updates.plugins_update_count }}</h3>
-                        </div>
+                <div class="col-12 md:col-4">
+                    <div v-if="plugins_update_bool" class="card rounded shadow">
+                    <div class="flex align-items-center">
+                        <i class="pi pi-folder-plus text-2xl text-primary ml-2"></i>
+                        <h3 class="ml-2 ">Plugins Updates: {{ website.updates.plugins_update_count }}</h3>
                     </div>
-                </div>
-                <div v-else class="lg:col-span-3 p-1 rounded-lg">
-                    <h3>No plugin updates available.</h3>
+                    </div>
+                    <div v-else class="card rounded shadow ">
+                    <h3 class="text-center text-muted">No plugin updates available.</h3>
+                    </div>
                 </div>
 
                 <!-- Themes Update Section -->
-                <div v-if="website.updates && themes_update_bool === true" class="lg:col-span-3">
-                    <div class="p-1 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="pi pi-palette"></i>
-                            <h3 class="ml-2">Themes Updates: {{ website.updates.plugins_update_count }}</h3>
-                        </div>
+                <div class="col-12 md:col-4">
+                    <div v-if="website.updates && themes_update_bool" class="card rounded shadow ">
+                    <div class="flex align-items-center">
+                        <i class="pi pi-palette text-2xl text-purple"></i>
+                        <h3 class="ml-2">Themes Updates: {{ website.updates.themes_update_count }}</h3>
+                    </div>
+                    </div>
+                    <div v-else class="card rounded shadow ">
+                    <h3 class="text-center text-muted">No theme updates available.</h3>
                     </div>
                 </div>
-                <div v-else class="lg:col-span-3 p-1 rounded-lg">
-                    <h3>No theme updates available.</h3>
-                </div>
-            </div>
-            <hr class="my-2">
-        </div>
-        <div class="col-span-1">
-            <div class="shadow-lg rounded-lg bg-gray-800 p-4 mb-4">
-                    <div class="flex items-center">
-                        <i class="pi pi-globe text-2xl"></i>
-                        <h1 class="text-2xl font-bold ml-2">{{ website.name }}</h1>
-                        <div class="h-16 w-16 rounded-full overflow-hidden ml-4">
-                            <img :src="website.url + '/' + 'favicon.ico'" alt="favicon" class="h-full w-full object-cover" />
-                        </div>
-                    </div>
-                <div class="flex justify-between items-center bg-purple-900 text-white p-4 rounded-t-lg">
-                    <div class="flex items-center">
-                        <a :href="website.url" target="_blank" rel="noopener noreferrer">
-                            <button class="btn-primary">Visit Website</button>
-                        </a>
-                        <a :href="website.url + '/wp-admin'" target="_blank" rel="noopener noreferrer">
-                            <button class="btn-secondary">WP-Admin</button>
-                        </a>
-                        <router-link :to="`/website/${website.id}/edit`">
-                            <button class="btn-info">Edit Website</button>
-                        </router-link>
-                    </div>
-                </div>
-                <div class="border-3 bg-purple-800 text-white mb-4 p-3 rounded-b-lg">
-                    <div class="grid grid-cols-3 gap-4 text-center">
-                        <a href="#plugins-table" class="flex flex-col items-center justify-center hover-effect">
-                            <i class="pi pi-folder-plus text-3xl"></i>
-                            <span class="mt-2">{{ website.plugins_count }} Plugins</span>
-                        </a>
-                        <a href="#themes-table" class="flex flex-col items-center justify-center hover-effect">
-                            <i class="pi pi-palette text-3xl"></i>
-                            <span class="mt-2">{{ website.themes_count }} Themes</span>
-                        </a>
-                        <a href="#posts-table" class="flex flex-col items-center justify-center hover-effect">
-                            <i class="pi pi-file text-3xl"></i>
-                            <span class="mt-2">{{ website.posts_count }} Posts</span>
-                        </a>
-                        <a href="#pages-table" class="flex flex-col items-center justify-center hover-effect">
-                            <i class="pi pi-file-o text-3xl"></i>
-                            <span class="mt-2">{{ website.pages_count }} Pages</span>
-                        </a>
-                        <a href="#users-table" class="flex flex-col items-center justify-center hover-effect">
-                            <i class="pi pi-users text-3xl"></i>
-                            <span class="mt-2">{{ website.users_count }} Users</span>
-                        </a>
-                        <a href="#media-table" class="flex flex-col items-center justify-center hover-effect">
-                            <i class="pi pi-image text-3xl"></i>
-                            <span class="mt-2">{{ website.media_count }} Media</span>
-                        </a>
-                        <a href="#comments-table" class="flex flex-col items-center justify-center hover-effect">
-                            <i class="pi pi-comment text-3xl"></i>
-                            <span class="mt-2">{{ website.comments_count }} Comments</span>
-                        </a>
-                    </div>
-                    <hr class="my-4">
-                    <div class="grid grid-cols-1 gap-2">
-                        <div v-for="(value, key) in website.info" :key="key">
-                            <span class="font-semibold">{{ key }}:</span>
-                            <span>{{ value }}</span>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
         </div>
         
-        <div class="col-span-4 shadow-lg">
-            <DataTable stripedRows ref="dt" :value="website.plugins" :paginator="true" :rows="5"
-                :filters="{ global: filters.pluginsFilter }" filterMode="global" id="plugins-table">
-                <h2 class="text-lg font-bold ">Plugins <i class="pi pi-folder-plus"></i></h2>
-                <InputText v-model="filters.pluginsFilter.value" placeholder="Search Plugins" />
-
+        <div class="col-12">
+            <DataTable
+                ref="dt"
+                :value="website.plugins"
+                :paginator="true"
+                :rows="5"
+                :filters="{ global: filters.pluginsFilter }"
+                filterMode="global"
+                id="plugins-table"
+                class="p-datatable-gridlines"
+            >
+                <div class="d-flex jc-between items-center">
+                    <div class="d-flex jc-between items-center">
+                        <h2 class="text-1xl font-bold space-x-2">
+                            Plugins <i class="pi pi-folder-plus"></i>
+                        </h2>
+                    </div>
+                    <InputText v-model="filters.pluginsFilter.value" placeholder="Search Plugins" />
+                </div>
                 <Column field="name" header="Name" :sortable="true" />
                 <Column field="version" header="Version" :sortable="true">
                     <template #body="{ data }">
@@ -130,104 +135,189 @@
                 <Column field="author" header="Author" :sortable="true" />
                 <Column field="status" header="Status" :sortable="true">
                     <template #body="{ data }">
-                        <div class="flex items-center">
-                            <span v-if="data.status === 'Active'" class="bg-green-500 px-2 py-1 rounded-lg"
-                                @click="togglePluginByName(data.name, data.path)">Active</span>
-                            <span v-else @click="togglePluginByName(data.name, data.path)"
-                                class="bg-red-500 px-2 py-1 rounded-lg">
-                                Inactive</span>
+                        <div class="d-flex items-center">
+                            <span
+                                v-if="data.status === 'Active'"
+                                class="bg-green-500 px-2 py-1 rounded-lg"
+                                @click="togglePluginByName(data.name, data.path)"
+                            >
+                                Active
+                            </span>
+                            <span
+                                v-else
+                                @click="togglePluginByName(data.name, data.path)"
+                                class="bg-red-500 px-2 py-1 rounded-lg"
+                            >
+                                Inactive
+                            </span>
                         </div>
                     </template>
                 </Column>
             </DataTable>
+        </div>
 
-            <DataTable stripedRows ref="dt" :value="website.themes" :paginator="true" :rows="5"
-                :filters="{ global: filters.themesFilter }" filterMode="global" id="themes-table">
-                <h2 class="text-lg font-bold ">Themes <i class="pi pi-palette"></i></h2>
-                <InputText v-model="filters.themesFilter.value" placeholder="Search Themes" />
-
+        <div class="col-12">
+            <DataTable
+                ref="dt"
+                :value="website.themes"
+                :paginator="true"
+                :rows="5"
+                :filters="{ global: filters.themesFilter }"
+                filterMode="global"
+                id="themes-table"
+                class="p-datatable-gridlines"
+            >
+                <div class="d-flex jc-between items-center">
+                    <h2 class="text-1xl font-bold space-x-2">Themes <i class="pi pi-palette"></i></h2>
+                    <InputText v-model="filters.themesFilter.value" placeholder="Search Themes" />
+                </div>
                 <Column field="name" header="Name" :sortable="true" />
                 <Column field="version" header="Version" :sortable="true" />
                 <Column field="author" header="Author" :sortable="true" />
             </DataTable>
+        </div>
 
-
-            <DataTable stripedRows ref="dt" :value="website.users" :paginator="true" :rows="5"
-                :filters="{ global: filters.usersFilter }" filterMode="global" id="users-table">
-                <h2 class="text-lg font-bold ">Users <i class="pi pi-users"></i></h2>
-                <InputText v-model="filters.usersFilter.value" placeholder="Search Users" />
-
+        <div class="col-12">
+            <DataTable
+                ref="dt"
+                :value="website.users"
+                :paginator="true"
+                :rows="5"
+                :filters="{ global: filters.usersFilter }"
+                filterMode="global"
+                id="users-table"
+                class="p-datatable-gridlines"
+            >
+                <div class="d-flex jc-between items-center">
+                    <h2 class="text-1xl font-bold space-x-2">Users <i class="pi pi-users"></i></h2>
+                    <InputText v-model="filters.usersFilter.value" placeholder="Search Users" />
+                </div>
                 <Column field="user_login" header="Login" :sortable="true" />
                 <Column field="user_email" header="Email" :sortable="true" />
                 <Column field="user_registered" header="Registered" :sortable="true" />
             </DataTable>
+        </div>
 
-            <DataTable stripedRows ref="dt" :value="website.media" :paginator="true" :rows="5"
-                :filters="{ global: filters.mediaFilter }" id="media-table" filterMode="global">
-                <h2 class="text-lg font-bold ">Media <i class="pi pi-image"></i></h2>
-                <InputText v-model="filters.mediaFilter.value" placeholder="Search Media" />
-                <!-- if media type image/jpg or image/png show column with image-->
+        <div class="col-12">
+            <DataTable
+                ref="dt"
+                :value="website.media"
+                :paginator="true"
+                :rows="5"
+                :filters="{ global: filters.mediaFilter }"
+                id="media-table"
+                filterMode="global"
+                class="p-datatable-gridlines"
+            >
+                <div class="d-flex jc-between items-center">
+                    <h2 class="text-1xl font-bold space-x-2">Media <i class="pi pi-image"></i></h2>
+                    <InputText v-model="filters.mediaFilter.value" placeholder="Search Media" />
+                </div>
                 <Column field="preview" header="Preview" :sortable="true">
                     <template #body="{ data }">
-                        <img v-if="data.media_type === 'image/jpg' || data.media_type === 'image/png'"
-                            :src="data.media_url" alt="media" />
+                        <img
+                            v-if="data.media_type === 'image/jpg' || data.media_type === 'image/png'"
+                            :src="data.media_url"
+                            alt="media"
+                        />
                         <i v-else class="pi pi-file text-2xl"></i>
                     </template>
                 </Column>
-
                 <Column field="media_title" header="Title" :sortable="true" />
                 <Column field="media_date" header="Date" :sortable="true" />
                 <Column field="media_type" header="Type" :sortable="true" />
             </DataTable>
+        </div>
 
-            <DataTable stripedRows ref="dt" :value="website.comments" :paginator="true" :rows="5"
-                :filters="{ global: filters.commentsFilter }" filterMode="global" id="comments-table">
-                <h2 class="text-lg font-bold ">Comments <i class="pi pi-comment"></i></h2>
-                <InputText v-model="filters.commentsFilter.value" placeholder="Search Comments" />
-
+        <div class="col-12">
+            <DataTable
+                ref="dt"
+                :value="website.comments"
+                :paginator="true"
+                :rows="5"
+                :filters="{ global: filters.commentsFilter }"
+                filterMode="global"
+                id="comments-table"
+                class="p-datatable-gridlines"
+            >
+                <div class="d-flex jc-between items-center">
+                    <h2 class="text-1xl font-bold space-x-2">Comments <i class="pi pi-comment"></i></h2>
+                    <InputText v-model="filters.commentsFilter.value" placeholder="Search Comments" />
+                </div>
                 <Column field="comment_author" header="Author" :sortable="true" />
                 <Column field="comment_date" header="Date" :sortable="true" />
                 <Column field="comment_content" header="Content" :sortable="true" :truncate="true" />
             </DataTable>
+        </div>
 
-            <DataTable stripedRows ref="dt" :value="website.posts" :paginator="true" :rows="5"
-                :filters="{ global: filters.postsFilter }" filterMode="global" id="posts-table">
-                <h2 class="text-lg font-bold ">Posts <i class="pi pi-file"></i></h2>
-                <InputText v-model="filters.postsFilter.value" placeholder="Search Posts" />
+        <div class="col-12">
+            <DataTable
+                ref="dt"
+                :value="website.posts"
+                :paginator="true"
+                :rows="5"
+                :filters="{ global: filters.postsFilter }"
+                filterMode="global"
+                id="posts-table"
+                class="p-datatable-gridlines"
+            >
+                <div class="d-flex jc-between items-center">
+                    <h2 class="text-1xl font-bold space-x-2">Posts <i class="pi pi-file"></i></h2>
+                    <InputText v-model="filters.postsFilter.value" placeholder="Search Posts" />
+                </div>
+                <Column field="post_id" header="ID" :sortable="true" />
                 <Column field="post_url" header="URL" :sortable="true">
                     <template #body="{ data }">
                         <a :href="data.post_url" target="_blank" rel="noopener noreferrer">
-                            <Button key="view" icon="pi pi-external-link" class="p-button-info" label="" />
+                            <Button key="view" icon="pi pi-external-link" class="button-info" label="" />
                         </a>
                     </template>
                 </Column>
                 <Column field="post_image" header="Image" :sortable="true">
                     <template #body="{ data }">
                         <img v-if="data.post_image" :src="data.post_image" alt="post" />
-                        <i v-else class="pi pi-file text-2xl"></i>
                     </template>
                 </Column>
                 <Column field="post_title" header="Title" :sortable="true" />
                 <Column field="post_date" header="Date" :sortable="true" />
                 <Column field="post_status" header="Status" :sortable="true">
                     <template #body="{ data }">
-                        <span
-                            :class="{ 'bg-green-500': data.post_status === 'publish', 'bg-red-500': data.post_status !== 'publish' }"
-                            class="px-2 py-1 rounded-lg ">
-                            {{ data.post_status === 'publish' ? 'Published' : data.post_status }}
-                        </span>
+                        <Dropdown
+                            v-model="data.post_status"
+                            @change="changePostStatusById(data.post_id, data.post_status)"
+                            :options="['publish', 'draft', 'pending', 'auto-draft', 'future', 'private', 'inherit', 'trash']"
+                        >
+                            <template #optiongroup="slotProps">
+                                <div class="d-flex ai-center">
+                                    <div>{{ slotProps.option }}</div>
+                                    <div>{{ slotProps.option.label }}</div>
+                                </div>
+                            </template>
+                        </Dropdown>
                     </template>
                 </Column>
             </DataTable>
+        </div>
 
-            <DataTable stripedRows ref="dt" :value="website.pages" :paginator="true" :rows="5"
-                :filters="{ global: filters.pagesFilter }" filterMode="global" id="pages-table">
-                <h2 class="text-lg font-bold ">Pages <i class="pi pi-file-o"></i></h2>
-                <InputText v-model="filters.pagesFilter.value" placeholder="Search Pages" />
+        <div class="col-12">
+            <DataTable
+                ref="dt"
+                :value="website.pages"
+                :paginator="true"
+                :rows="5"
+                :filters="{ global: filters.pagesFilter }"
+                filterMode="global"
+                id="pages-table"
+                class="p-datatable-gridlines"
+            >
+                <div class="d-flex jc-between items-center">
+                    <h2 class="text-1xl font-bold space-x-2">Pages <i class="pi pi-file-o"></i></h2>
+                    <InputText v-model="filters.pagesFilter.value" placeholder="Search Pages" />
+                </div>
                 <Column field="page_url" header="URL" :sortable="true">
                     <template #body="{ data }">
                         <a :href="data.page_url" target="_blank" rel="noopener noreferrer">
-                            <Button key="view" icon="pi pi-external-link" class="p-button-info" />
+                            <Button key="view" icon="pi pi-external-link" class="button-info" />
                         </a>
                     </template>
                 </Column>
@@ -241,12 +331,18 @@
                 <Column field="page_date" header="Date" :sortable="true" />
                 <Column field="page_status" header="Status" :sortable="true">
                     <template #body="{ data }">
-                        {{ data.page_status }}
-                        <span
-                            :class="{ 'bg-green-500': data.page_status === 'publish', 'bg-red-500': data.page_status !== 'publish' }"
-                            class="px-2 py-1 rounded-lg ">
-                            {{ data.page_status === 'publish' ? 'Published' : data.page_status }}
-                        </span>
+                        <Dropdown
+                            v-model="data.page_status"
+                            @change="changePageStatusById(data.page_id, data.page_status)"
+                            :options="['publish', 'draft', 'pending', 'auto-draft', 'future', 'private', 'inherit', 'trash']"
+                        >
+                            <template #optiongroup="slotProps">
+                                <div class="d-flex ai-center">
+                                    <div>{{ slotProps.option }}</div>
+                                    <div>{{ slotProps.option.label }}</div>
+                                </div>
+                            </template>
+                        </Dropdown>
                     </template>
                 </Column>
             </DataTable>
@@ -256,14 +352,13 @@
 
 
 
-
 <script>
 import axios from "axios";
 import { onMounted } from "vue";
 import { FilterMatchMode, FilterOperator } from 'primevue/api';
-
-
-
+import Dropdown from "primevue/dropdown";
+import Button from "primevue/button";
+import Badge from "primevue/badge";
 
 export default {
     name: "WebsitePage",
@@ -285,8 +380,6 @@ export default {
             default: 0
         }
     },
-
-
     data() {
         return {
             website: {},
@@ -300,87 +393,103 @@ export default {
                 postsFilter: { value: "", matchMode: FilterMatchMode.CONTAINS },
                 pagesFilter: { value: "", matchMode: FilterMatchMode.CONTAINS }
             }
-
-
         };
     },
     methods: {
-
         filterData() {
             this.$refs.dt.filter(this.filters.global.value, 'name', this.filters.global.matchMode);
         },
-
         async getWebsiteDetail() {
-            // Show the progress bar
-            var progressBar = document.querySelector(".p-progressbar");
-            progressBar.style.display = "block";
+            try {
+                // Show the progress bar
+                var progressBar = document.querySelector(".p-progressbar");
+                progressBar.style.display = "block";
 
-            let retryCount = 0;
-            const maxRetries = 3;
+                const response = await axios.get(`${this.$env.VITE_API_URL}/website/${this.id}`);
+                this.website = response.data.website;
 
-            while (retryCount < maxRetries) {
-                try {
-                    const response = await axios.get(`http://localhost:5001/website/${this.id}`);
-                    this.website = response.data.website;
+                // Update the counts
+                this.website.plugins_count = this.website.plugins.length;
+                this.website.themes_count = this.website.themes.length;
+                this.website.posts_count = this.website.posts.length;
+                this.website.pages_count = this.website.pages.length;
+                this.website.users_count = this.website.users.length;
+                this.website.media_count = this.website.media.length;
+                this.website.comments_count = this.website.comments.length;
 
-                    // Update the counts
-                    this.website.plugins_count = this.website.plugins.length;
-                    this.website.themes_count = this.website.themes.length;
-                    this.website.posts_count = this.website.posts.length;
-                    this.website.pages_count = this.website.pages.length;
-                    this.website.users_count = this.website.users.length;
-                    this.website.media_count = this.website.media.length;
-                    this.website.comments_count = this.website.comments.length;
+                var themes_update_count = parseInt(this.website.updates.themes_update_count);
+                var plugins_update_count = parseInt(this.website.updates.plugins_update_count);
 
-                    var themes_update_count = parseInt(this.website.updates.themes_update_count);
-                    var plugins_update_count = parseInt(this.website.updates.plugins_update_count);
+                var plugins_update_bool = plugins_update_count > 0 ? true : false;
+                var themes_update_bool = themes_update_count > 0 ? true : false;
 
-                    var plugins_update_bool = plugins_update_count > 0 ? true : false;
-                    var themes_update_bool = themes_update_count > 0 ? true : false;
+                this.plugins_update_bool = plugins_update_bool;
+                this.themes_update_bool = themes_update_bool;
 
-                    this.plugins_update_bool = plugins_update_bool;
-                    this.themes_update_bool = themes_update_bool;
-
-                    progressBar.style.display = "none";
-
-
-                    break; // Exit the loop if successful
-                } catch (error) {
-                    console.log(error);
-
-                    retryCount++;
-                    this.$toast.open({
-                        message: "Failed to fetch website details. Retrying nr. " + retryCount + " ...", // Show the error message
-                        type: "error",
-                        position: "top-right",
-                    });
-                    // wait for 2 seconds before retrying
-                    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-                }
-            }
-
-            if (retryCount === maxRetries) {
-                // Hide the progress bar
                 progressBar.style.display = "none";
+
                 this.$toast.open({
-                    message: "Failed to fetch website details after multiple retries.", // Show the error message
+                    message: "Website details fetched successfully.", // Show the success message
+                    type: "success",
+                    position: "top-right",
+                });
+            } catch (error) {
+                console.log(error);
+
+                this.$toast.open({
+                    message: "Failed to fetch website details.", // Show the error message
                     type: "error",
                     position: "top-right",
                 });
+            } finally {
+                // Hide the progress bar
+                var progressBar = document.querySelector(".p-progressbar");
+                progressBar.style.display = "none";
             }
         },
-
         togglePluginByName(name, path) {
-            const api_url = `http://localhost:5001/website/${this.id}/toggle-plugin`;
-            axios.post(api_url, { name: name, path: path })
+            const VITE_API_URL = `${this.$env.VITE_API_URL}/website/${this.id}/toggle-plugin`;
+            axios.post(VITE_API_URL, { name: name, path: path })
                 .then((response) => {
                     console.log(response.data);
                     this.$toast.open({
                         message: response.data.data, // Show the message from the server
                         type: response.data.status === "success" ? "success" : "error", // Show success or error message
                         position: "top-right",
+                    });
 
+                    this.getWebsiteDetail();
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        },
+        changePostStatusById(id, status) {
+            const VITE_API_URL = `${this.$env.VITE_API_URL}/website/${this.id}/change-post-status`;
+            axios.post(VITE_API_URL, { id: id, status: status })
+                .then((response) => {
+                    console.log(response.data);
+                    this.$toast.open({
+                        message: response.data.data, // Show the message from the server
+                        type: response.data.status === "success" ? "success" : "error", // Show success or error message
+                        position: "top-right",
+                    });
+
+                    this.getWebsiteDetail();
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        },
+        changePageStatusById(id, status) {
+            const VITE_API_URL = `${this.$env.VITE_API_URL}/website/${this.id}/change-page-status`;
+            axios.post(VITE_API_URL, { id: id, status: status })
+                .then((response) => {
+                    console.log(response.data);
+                    this.$toast.open({
+                        message: response.data.data, // Show the message from the server
+                        type: response.data.status === "success" ? "success" : "error", // Show success or error message
+                        position: "top-right",
                     });
 
                     this.getWebsiteDetail();
@@ -390,17 +499,16 @@ export default {
                 });
         }
     },
-
     created() {
         //this.getWebsiteDetail();
     },
-
     mounted() {
         this.getWebsiteDetail();
-
     },
+    components: {
+  
+    }
 };
-
 </script>
 
 
@@ -412,11 +520,7 @@ export default {
 #comments-table,
 #posts-table,
 #pages-table {
-    margin-top: 1rem;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-
+    margin-bottom: 1rem;
 }
 
 img {
@@ -424,24 +528,5 @@ img {
     height: 100px;
     object-fit: cover;
     border-radius: 0.5rem;
-}
-
-
-
-.p-inputtext {
-    margin-bottom: 1rem;
-    border: none;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease;
-}
-
-
-.p-datatable {
-    margin-top: 1rem;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 </style>

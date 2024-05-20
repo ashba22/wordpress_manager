@@ -1,288 +1,289 @@
 <template>
-  <div class="container mx-auto py-4">
-    <div class="flex flex-col">
-      <div class="flex justify-between items-center py-2">
-        <h2 class="text-2xl font-bold">Websites</h2>
-        <Button label="Add Website" @click="toggleAddWebsiteModal"
-          class="bg-blue-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-blue-600"> <i
-            class="pi pi-plus px-1"></i> Add Website </Button>
+
+  <div class="main-content">
+
+  
+    <div class="grid">
+
+     
+   
+      
+      <div class="content col-12 lg:col-8">
+        <div class="d-flex jc-between ai-center p-2">
+          <h2 class="text-2xl">Websites</h2>
+          <Button label="Add Website" @click="showAddWebsiteModal=true" class="button-raised button-rounded button-info button-text" icon="pi pi-plus"></Button>
+        </div>
+        <div class="mt-2">
+          <DataTable :value="websites" :paginator="true" :rows="2" :rowsPerPageOptions="[2, 10, 20]" class="p-datatable-gridlines p-datatable-responsive">
+            <Column field="name" header="Name" sortable></Column>
+            <Column field="url" header="URL" sortable></Column>
+            <Column header="Action">
+              <template #body="slotProps">
+                <div class="flex gap-2">
+                  <router-link :to="`/website/${slotProps.data.id}`">
+                    <Button label="MANAGE" icon="pi pi-cog" severity="info" class="button-rounded button-text"></Button>
+                  </router-link>
+                  <Button label="EDIT" icon="pi pi-pencil" @click="editWebsite(slotProps.data)" severity="warning" class="button-rounded button-text"></Button>  
+                  <Button label="DELETE" icon="pi pi-trash" @click="confirmDelete(slotProps.data)" severity="danger" class="button-rounded button-text"></Button>
+                </div>
+              </template>
+            </Column>
+            <Column>
+              <template #header>
+                <div class="d-flex ai-center">
+                  <span class="mr-2">Status</span>
+                  <Button icon="pi pi-refresh" class="p-button-rounded p-button-info " @click="fetchWebsites"></Button>
+                </div>
+          
+     
+              </template>
+              <template #body="slotProps">
+                <div class="d-flex ai-center space-x-2">
+                  <span v-if="slotProps.data.is_online" class="text-green-500 font-bold">Online</span>
+                  <span v-else class="text-red-500 font-bold">Offline</span>
+                </div>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+        <!-- Add Website Dialog -->
+        <Dialog header="Add Website" :visible.sync="showAddWebsiteModal" modal style="width: 50vw" class="">
+          <form @submit.prevent="handleAddSubmit">
+            <div class="field grid">
+              <label for="name" class="col-fixed" style="width: 100px">Name</label>
+              <div class="col">
+                <InputText id="name" v-model="addWebsiteForm.name" required />
+              </div>
+            </div>
+            <div class="field grid">
+              <label for="url" class="col-fixed" style="width: 100px">URL</label>
+              <div class="col">
+                <InputText id="url" v-model="addWebsiteForm.url" required />
+              </div>
+            </div>
+            <div class="field grid">
+              <label for="api_key" class="col-fixed" style="width: 100px">API Key</label>
+              <div class="col">
+                <InputText id="api_key" v-model="addWebsiteForm.api_key" required />
+              </div>
+            </div>
+            <div class="field grid">
+              <label for="active" class="col-fixed" style="width: 100px">Active</label>
+              <div class="col">
+                <Checkbox id="active" v-model="addWebsiteForm.active" binary="true" class="mt-0" />
+              </div>
+            </div>
+            <div class="d-flex jc-between mt-4">
+              <Button label="Cancel" icon="pi pi-times" class="button-text" @click="showAddWebsiteModal=false"></Button>
+              <Button type="submit" label="Submit" icon="pi pi-check" class="button-raised button-rounded"></Button>
+            </div>
+          </form>
+        </Dialog>
+
+        <!-- Edit Website Dialog -->
+        <Dialog header="Edit Website" :visible.sync="showEditWebsiteModal" modal style="width: 50vw" class="">
+          <form @submit.prevent="handleEditSubmit" class="d-flex flex-column gap-1">
+            <div class="field grid">
+              <label for="name" class="col-fixed" style="width: 100px">Name</label>
+              <div class="col">
+                <InputText id="name" v-model="editWebsiteForm.name" required />
+              </div>
+            </div>
+            <div class="field grid">
+              <label for="url" class="col-fixed" style="width: 100px">URL</label>
+              <div class="col">
+                <InputText id="url" v-model="editWebsiteForm.url" required />
+              </div>
+            </div>
+            <div class="field grid">
+              <label for="api_key" class="col-fixed" style="width: 100px">API Key</label>
+              <div class="col">
+                <InputText id="api_key" v-model="editWebsiteForm.api_key" required />
+              </div>
+            </div>
+            <div class="field grid">
+              <label for="active" class="col-fixed" style="width: 100px">Active</label>
+              <div class="col">
+                <Checkbox id="active" v-model="editWebsiteForm.active" binary="true" class="mt-0" />
+              </div>
+            </div>
+            <div class="d-flex jc-between mt-4">
+              <Button label="Cancel" icon="pi pi-times" class="button-text" @click="showEditWebsiteModal=false"></Button>
+              <Button type="submit" label="Submit" icon="pi pi-check" class="button-raised button-rounded"></Button>
+            </div>
+          </form>
+        </Dialog>
       </div>
-      <div>
-        <DataTable :value="websites" :paginator="true" :rows="10" :rowsPerPageOptions="[5, 10, 20]">
-          <Column field="name" header="Name" sortable></Column>
-          <Column field="url" header="URL" sortable></Column>
-          <Column field="active" header="Status" sortable></Column>
-          <Column header="Action">
-            <template #body="slotProps">
-              <router-link :to="`/website/${slotProps.data.id}`">
-                <Button label="MANAGE"
-                  class="bg-blue-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-blue-600"></Button>
-              </router-link>
-              <Button label="EDIT" @click="toggleEditWebsiteModal(slotProps.data)"
-                class="bg-yellow-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-yellow-600"></Button>
-              <Button label="Delete" @click="handleDeleteWebsite(slotProps.data)"
-                class="bg-red-500 text-white px-4 py-2 rounded-sm transition-colors duration-300 hover:bg-red-600"></Button>
-            </template>
-          </Column>
-        </DataTable>
-      </div>
-    </div>
 
-
-    <!-- Add Website Modal -->
-    <div ref="addWebsiteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-      :class="{ 'hidden': !activeAddWebsiteModal }">
-      <div class="bg-gray-800 p-4 rounded shadow-lg">
-        <h5 class="text-xl font-bold mb-4 text-white">Add Website</h5>
-        <button type="button" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-          @click="toggleAddWebsiteModal">
-          <i class="pi pi-times"></i>
-        </button>
-        <form @submit.prevent="handleAddSubmit">
-          <div class="mb-4">
-            <label for="addWebsiteName" class="block font-bold mb-2 text-white">Name</label>
-            <input type="text" class="border border-gray-300 rounded px-4 py-2 w-full" id="addWebsiteName"
-              v-model="addWebsiteForm.name" required />
+      <Card class="mb-1 col-12 lg:col-4">
+        <template #header>
+          <p class="text-xl font-bold text-center p-3 border-bottom-1">Websites Stats and Updates</p>
+        </template>
+        <template #content>
+          <div class="grid">
+            <div class="col-12 md:col-4 text-center mb-4">
+              <div class="flex flex-col align-items-center">
+                <h3 class="font-bold">Websites</h3>
+                <span class="text-2xl font-bold ml-2 text-blue-500">{{ websites.length }}</span>
+              </div>
+            </div>
+            <div class="col-12 md:col-4 text-center mb-4">
+              <div class="flex flex-col align-items-center">
+                <h3 class="text-lg font-bold">Online</h3>
+                <span class="text-2xl font-bold ml-2 text-green-500">{{ websites.filter(website => website.is_online).length }}</span>
+              </div>
+            </div>
+            <div class="col-12 md:col-4 text-center mb-4">
+              <div class="flex flex-col align-items-center">
+                <h3 class="text-lg font-bold">Offline</h3>
+                <span class="text-2xl font-bold ml-2 text-red-500">{{ websites.filter(website => !website.is_online).length }}</span>
+              </div>
+            </div>
+            <div class="col-12 md:col-4 text-center mb-4">
+              <div class="flex flex-col align-items-center">
+                <h3 class="text-lg font-bold">WP Updates</h3>
+                <span class="text-2xl font-bold ml-2">{{ websites_updates.reduce((total, website) => total + (website.updates.core !== '' ? 1 : 0), 0) }}</span>
+              </div>
+            </div>
+            <div class="col-12 md:col-4 text-center mb-4">
+              <div class="flex flex-col align-items-center">
+                <h3 class="text-lg font-bold">Plugins Updates</h3>
+                <span class="text-2xl font-bold ml-2">{{ websites_updates.reduce((total, website) => total + website.updates.plugins_update_count, 0) }}</span>
+              </div>
+            </div>
+            <div class="col-12 md:col-4 text-center mb-4">
+              <div class="flex flex-col align-items-center">
+                <h3 class="text-lg font-bold">Template Updates</h3>
+                <span class="text-2xl font-bold ml-2">{{ websites_updates.reduce((total, website) => total + website.updates.themes_update_count, 0) }}</span>
+              </div>
+            </div>
           </div>
-          <div class="mb-4">
-            <label for="addWebsiteUrl" class="block font-bold mb-2 text-white">URL</label>
-            <input type="text" class="border border-gray-300 rounded px-4 py-2 w-full" id="addWebsiteUrl"
-              v-model="addWebsiteForm.url" required />
+        </template>
+        <template #footer>
+          <div class="flex justify-center p-2">
+            <Button label="Refresh Stats" icon="pi pi-refresh" class="p-button-rounded p-button-info" @click="fetchWebsitesUpdates" />
           </div>
-          <div class="mb-4">
-            <!--- input fot api_url -->
-            <label for="addWebsiteApiKey" class="block font-bold mb-2 text-white">API Key</label>
-            <input type="text" class="border border-gray-300 rounded px-4 py-2 w-full" id="addWebsiteApiKey"
-              v-model="addWebsiteForm.api_key" required />
-          </div>
-          <div class="mb-4">
-            <input type="checkbox" class="form-checkbox" id="addWebsiteActive" v-model="addWebsiteForm.active" />
-            <label class="ml-2 text-white" for="addWebsiteActive">Active</label>
-          </div>
-          <div class="flex justify-end">
-            <button type="button" class="text-gray-500 hover:text-gray-700 mr-2"
-              @click="toggleAddWebsiteModal">Cancel</button>
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-sm">Submit</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Edit Website Modal -->
-    <div ref="editWebsiteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-      :class="{ 'hidden': !activeEditWebsiteModal }">
-      <div class="bg-gray-800 p-4 rounded shadow-lg">
-        <h5 class="text-xl font-bold mb-4 text-white">Edit Website</h5>
-        <button type="button" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-          @click="toggleEditWebsiteModal">
-          <i class="pi pi-times"></i>
-        </button>
-        <form @submit.prevent="handleEditSubmit">
-          <div class="mb-4">
-            <label for="editWebsiteName" class="block font-bold mb-2 text-white">Name</label>
-            <input type="text" class="border border-gray-300 rounded px-4 py-2 w-full" id="editWebsiteName"
-              v-model="editWebsiteForm.name" required />
-          </div>
-          <div class="mb-4">
-            <label for="editWebsiteUrl" class="block font-bold mb-2 text-white">URL</label>
-            <input type="text" class="border border-gray-300 rounded px-4 py-2 w-full" id="editWebsiteUrl"
-              v-model="editWebsiteForm.url" required />
-          </div>
-          <div class="mb-4">
-            <label for="editWebsiteApiKey" class="block font-bold mb-2 text-white">API Key</label>
-            <input type="text" class="border border-gray-300 rounded px-4 py-2 w-full" id="editWebsiteApiKey"
-              v-model="editWebsiteForm.api_key" required />
-          </div>
-
-
-          <div class="mb-4">
-            <input type="checkbox" class="form-checkbox" id="editWebsiteActive" v-model="editWebsiteForm.active" />
-            <label class="ml-2 text-white" for="editWebsiteActive">Active</label>
-          </div>
-          <div class="flex justify-end">
-            <button type="button" class="text-gray-500 hover:text-gray-700 mr-2"
-              @click="toggleEditWebsiteModal">Cancel</button>
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-sm">Submit</button>
-          </div>
-        </form>
-      </div>
+        </template>
+      </Card>
+      
     </div>
   </div>
 
-
 </template>
-
-
 <script>
-import axios from "axios";
-
-
+import axios from 'axios';
 
 export default {
   data() {
     return {
-      activeAddWebsiteModal: false,
-      activeEditWebsiteModal: false,
-      addWebsiteForm: {
-        name: "",
-        url: "",
-        api_key: "",
-        active: false,
-      },
+      showAddWebsiteModal: false,
+      showEditWebsiteModal: false,
       websites: [],
-      editWebsiteForm: {
-        id: "",
-        name: "",
-        url: "",
-        api_key: "",
-        active: false,
-      },
-      sortBy: "name", // default sorting by name
-      reverse: false,
+      websites_updates: [],
+      addWebsiteForm: { name: '', url: '', api_key: '', active: false },
+      editWebsiteForm: { id: '', name: '', url: '', api_key: '', active: false },
+      
     };
   },
-  components: {
-    // Alert,
-  },
+  components: {},
   methods: {
-    // Fetch websites with sorting
-    fetchWebsites() {
-      const apiUrl = `http://localhost:5001/websites`;
-      axios
-        .get(apiUrl)
-        .then((res) => {
-          this.websites = res.data;
-          console.log(this.websites);
-
-        })
-        .catch((error) => {
-          console.error(error);
+    async fetchWebsites() {
+      console.log('fetching websites');
+      console.log(this.$env.VITE_API_URL);
+      try {
+        this.showLoadingBar();
+        const response = await axios.get(`${this.$env.VITE_API_URL}/websites`);
+        this.websites = response.data;
+        this.hideLoadingBar();
+        this.$toast.open({
+          message: "Websites Loaded",
+          type: "info",
+          position: "top-right",
         });
-    },
-    // Handle sorting
-    handleSort(sortBy) {
-      if (sortBy === this.sortBy) {
-        this.reverse = !this.reverse;
-      } else {
-        this.sortBy = sortBy;
-        this.reverse = false;
-      }
-      this.fetchWebsites(this.sortBy, this.reverse);
-    },
-    addWebsite(payload) {
-      const path = "http://localhost:5001/websites";
-      axios
-        .post(path, payload)
-        .then(() => {
-          this.fetchWebsites(this.sortBy, this.reverse);
-          this.message = "Website added!";
-          this.$toast.open({
-            message: this.message,
-            type: "success",
-            position: "top-right",
-
-          });
-
-          this.toggleAddWebsiteModal();
-        })
-        .catch((error) => {
-          console.log(error);
-          this.fetchWebsites(this.sortBy, this.reverse);
+      } catch (error) {
+        console.error(error);
+        this.hideLoadingBar();
+        this.$toast.open({
+          message: "Error Websites",
+          type: "error",
+          position: "top-right",
         });
-    },
-    handleAddSubmit() {
-      const payload = {
-        name: this.addWebsiteForm.name,
-        url: this.addWebsiteForm.url,
-        active: this.addWebsiteForm.active,
-      };
-      this.addWebsite(payload);
-      this.initForm();
-    },
-    handleDeleteWebsite(website) {
-      this.removeWebsite(website.id);
-    },
-    handleEditSubmit() {
-      const payload = {
-        name: this.editWebsiteForm.name,
-        url: this.editWebsiteForm.url,
-        active: this.editWebsiteForm.active,
-      };
-      this.updateWebsite(payload, this.editWebsiteForm.id);
-    },
-    initForm() {
-      this.addWebsiteForm.name = "";
-      this.addWebsiteForm.url = "";
-      this.addWebsiteForm.api_key = "";
-      this.addWebsiteForm.active = false;
-      this.editWebsiteForm.id = "";
-      this.editWebsiteForm.name = "";
-      this.editWebsiteForm.url = "";
-      this.editWebsiteForm.api_key = "";
-      this.editWebsiteForm.active = false;
-    },
-    removeWebsite(websiteID) {
-      const path = `http://localhost:5001/website/${websiteID}`;
-      axios
-        .delete(path)
-        .then(() => {
-          this.fetchWebsites(this.sortBy, this.reverse);
-          this.message = "Website deleted!";
-          this.$toast.open({
-            message: this.message,
-            type: "info",
-            position: "top-right",
-          });
-
-        })
-        .catch((error) => {
-          console.error(error);
-          this.fetchWebsites(this.sortBy, this.reverse);
-        });
-    },
-    toggleAddWebsiteModal() {
-      this.activeAddWebsiteModal = !this.activeAddWebsiteModal;
-    },
-    toggleEditWebsiteModal(website) {
-      this.activeEditWebsiteModal = !this.activeEditWebsiteModal;
-      if (website) {
-        this.editWebsiteForm = website;
       }
     },
-    updateWebsite(payload, websiteID) {
-      const path = `http://localhost:5001/website/${websiteID}`;
-      axios
-        .put(path, payload)
-        .then(() => {
-          this.fetchWebsites(this.sortBy, this.reverse);
-          this.message = "Website updated!";
-          this.$toast.open({
-            message: this.message,
-            type: "success",
-            position: "top-right",
-          });
-          this.toggleEditWebsiteModal();
-        })
-        .catch((error) => {
-          console.error(error);
-          this.fetchWebsites(this.sortBy, this.reverse);
+    async fetchWebsitesUpdates() {
+      try {
+        this.showLoadingBar();
+        const response = await axios.get(`${this.$env.VITE_API_URL}/websites/updates`);
+        this.websites_updates = response.data;
+        this.hideLoadingBar();
+        this.$toast.open({
+          message: "Updates informations loaded",
+          type: "info",
+          position: "top-right",
         });
+      } catch (error) {
+        console.error(error);
+        this.hideLoadingBar();
+        this.$toast.open({
+          message: "Error Websites Updates",
+          type: "error",
+          position: "top-right",
+        });
+      }
+    },
+    async handleAddSubmit() {
+      try {
+        await axios.post(`${this.$env.VITE_API_URL}/websites`, this.addWebsiteForm);
+        this.showAddWebsiteModal = false;
+        this.fetchWebsites();
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async handleEditSubmit() {
+      try {
+        await axios.put(`${this.$env.VITE_API_URL}/website/${this.editWebsiteForm.id}`, this.editWebsiteForm);
+        this.showEditWebsiteModal = false;
+        this.fetchWebsites();
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    editWebsite(website) {
+      this.editWebsiteForm = { ...website };
+      this.showEditWebsiteModal = true;
+    },
+    confirmDelete(website) {
+      if (confirm(`Are you sure you want to delete ${website.name}?`)) {
+        axios.delete(`${this.$env.VITE_API_URL}/website/${website.id}`)
+          .then(() => this.fetchWebsites())
+          .catch(error => console.error(error));
+      }
+    },
+    showLoadingBar() {
+      const progressBar = document.querySelector(".p-progressbar");
+      progressBar.style.display = "block";
+    },
+    hideLoadingBar() {
+      const progressBar = document.querySelector(".p-progressbar");
+      progressBar.style.display = "none";
     },
   },
   created() {
-    this.fetchWebsites(this.sortBy, this.reverse);
+    this.fetchWebsites();
   },
-  //// when esc cicked clode modal
   mounted() {
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        this.activeAddWebsiteModal = false;
-        this.activeEditWebsiteModal = false;
-      }
-    });
-  },
-
+    this.fetchWebsitesUpdates();
+  }
 };
 </script>
+<style scoped>
 
-<style scoped></style>
+.main-content {
+  padding: 1rem;
+  margin: 0 auto;
+
+}
+
+
+</style>

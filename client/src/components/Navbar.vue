@@ -1,33 +1,27 @@
-
 <template>
-  <div class="card">
-      <Menubar :model="items" :start="start" :item="item" :end="end" class="shadow-lg">
-        <template #start>
-          <div class="flex items-center">
-            <img src="/logo.svg" alt="logo" class="w-16 h-16" />
-            <span class="ml-2 text-color-white font-bold"><b>WPManager</b></span>
-          </div>
-        </template>
-        <template #item="{ item, props, hasSubmenu }">
-          <router-link v-if="item.route" v-slot="{ href, navigate }" :to="item.route" custom>
-            <a v-ripple :href="href" v-bind="props.action" @click="navigate" class="flex items-center">
-              <span :class="item.icon" />
-              <span class="ml-2">{{ item.label }}</span>
-            </a>
-          </router-link>
-          <a v-else v-ripple :href="item.url" :target="item.target" v-bind="props.action" class="flex items-center">
+  <Menubar :model="items">
+    <template #start>
+        <img src="/logo.svg" alt="logo" class="logo" />
+    </template>
+    <template #item="{ item, props, hasSubmenu, root }">
+        <a v-ripple class="flex align-items-center" v-bind="props.action" :href="item.route">
             <span :class="item.icon" />
             <span class="ml-2">{{ item.label }}</span>
-            <span v-if="hasSubmenu" class="pi pi-fw pi-angle-down ml-2" />
-          </a>
-        </template>
+            <Badge v-if="item.badge" :class="{ 'ml-auto': !root, 'ml-2': root }" :value="item.badge" />
+            <span v-if="item.shortcut" class="ml-auto border-1 surface-border border-round surface-100 text-xs p-1">{{ item.shortcut }}</span>
+            <i v-if="hasSubmenu" :class="['pi pi-angle-down', { 'pi-angle-down ml-2': root, 'pi-angle-right ml-auto': !root }]"></i>
+        </a>
+    </template>
+    <template #end>
+        <div class="flex align-items-center gap-2">
+            <InputText placeholder="Search" type="text" class="w-8rem sm:w-auto" />
+        </div>
+    </template>
+</Menubar>
 
-      </Menubar>
-  </div>
 </template>
-
 <script setup>
-import { ref } from "vue";
+import { ref } from 'vue';
 
 const items = ref([
   {
@@ -37,9 +31,3 @@ const items = ref([
   },
 ]);
 </script>
-
-<style scoped>
-p-menubar {
-border: 1px solid #e0e0e0;
-}
-</style>

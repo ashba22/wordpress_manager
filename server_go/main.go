@@ -7,7 +7,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+
 	"os"
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -56,7 +58,6 @@ var client = &fasthttp.Client{
 	MaxIdleConnDuration: 30 * time.Second,
 }
 
-// fetchData improved with better error handling and possibly a retry mechanism
 func fetchData(url string) (interface{}, error) {
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
@@ -65,6 +66,7 @@ func fetchData(url string) (interface{}, error) {
 
 	req.SetRequestURI(url)
 	req.Header.SetMethod("GET")
+	req.Header.Set("Connection", "close") // Add 'Connection: close' header
 
 	retryCount := 3
 	for i := 0; i < retryCount; i++ {
@@ -98,20 +100,48 @@ func fetchData(url string) (interface{}, error) {
 func setupRoutes(app *fiber.App, db *gorm.DB) {
 
 	app.Get("/websites", func(c *fiber.Ctx) error {
-		var websites []Website
-		db.Find(&websites)
 
-		websitesRemap := make([]map[string]interface{}, len(websites))
-		for i, website := range websites {
-			websitesRemap[i] = map[string]interface{}{
-				"id":          website.ID,
-				"name":        website.Name,
-				"url":         website.URL,
-				"api_key":     website.Api_Key,
-				"active":      website.Active,
-				"description": website.Description,
-			}
+		var websites []Website
+		err := db.Find(&websites).Error
+		if err != nil {
+			return c.Status(500).SendString("Failed to fetch websites")
 		}
+
+		websitesRemap := make([]map[string]interface{}, len(websites)) // Initialize with the correct length
+
+		// Use a WaitGroup to wait for all requests to finish
+		var wg sync.WaitGroup
+
+		for i, website := range websites {
+			wg.Add(1)
+			go func(i int, website Website) {
+				defer wg.Done()
+
+				// Send a HEAD request to the website to check if it is online
+				resp, err := http.Head(website.URL)
+				isOnline := false // Set the initial value to false
+
+				if err == nil && resp.StatusCode == http.StatusOK {
+					isOnline = true // Update the value to true if the request is successful and the status code is 200
+				}
+
+				// Create a map with the website details and online status
+				websiteMap := map[string]interface{}{
+					"id":          website.ID,
+					"name":        website.Name,
+					"url":         website.URL,
+					"api_key":     website.Api_Key,
+					"active":      website.Active,
+					"description": website.Description,
+					"is_online":   isOnline,
+				}
+
+				websitesRemap[i] = websiteMap
+			}(i, website)
+		}
+
+		// Wait for all requests to finish
+		wg.Wait()
 
 		return c.JSON(websitesRemap)
 	})
@@ -125,11 +155,77 @@ func setupRoutes(app *fiber.App, db *gorm.DB) {
 			logger.Errorf("Failed to create website: %v", result.Error)
 			return c.Status(500).JSON(APIError{"database_error", "Failed to create website"})
 		}
-		return c.JSON(website)
+
+		websiteMap := map[string]interface{}{
+			"id":      website.ID,
+			"name":    website.Name,
+			"url":     website.URL,
+			"api_key": website.Api_Key,
+			"active":  website.Active,
+		}
+
+		return c.JSON(websiteMap)
+	})
+	app.Get("/websites/updates", func(c *fiber.Ctx) error {
+		var websites []Website
+		if err := db.Find(&websites).Error; err != nil {
+			return c.Status(500).SendString("Failed to fetch websites")
+		}
+
+		websitesUpdatesInfo := make([]map[string]interface{}, len(websites))
+
+		var wg sync.WaitGroup
+		var mu sync.Mutex // Add a mutex to protect the shared slice
+		for i, website := range websites {
+			wg.Add(1)
+			go func(i int, website Website) {
+				defer wg.Done()
+
+				client := &fasthttp.Client{}
+				req := fasthttp.AcquireRequest()
+				defer fasthttp.ReleaseRequest(req)
+				req.SetRequestURI(fmt.Sprintf("%s/wp-json/wp-manager-plugin/v1/updates?api_key=%s", website.URL, website.Api_Key))
+
+				resp := fasthttp.AcquireResponse()
+				defer fasthttp.ReleaseResponse(resp)
+				if err := client.Do(req, resp); err != nil {
+					log.Printf("Failed to fetch updates from %s: %v", website.URL, err)
+					// Handle the error and continue to the next website
+					return
+				}
+
+				if resp.StatusCode() != fasthttp.StatusOK {
+					log.Printf("Non-200 status from %s: %d", website.URL, resp.StatusCode())
+					// Handle the error and continue to the next website
+					return
+				}
+
+				var result interface{}
+				if err := json.Unmarshal(resp.Body(), &result); err != nil {
+					log.Printf("Failed to decode JSON from %s: %v", website.URL, err)
+					// Handle the error and continue to the next website
+					return
+				}
+
+				websiteMap := map[string]interface{}{
+					"id":      website.ID,
+					"name":    website.Name,
+					"updates": result,
+				}
+
+				mu.Lock()
+				websitesUpdatesInfo[i] = websiteMap
+				mu.Unlock()
+			}(i, website)
+		}
+
+		wg.Wait()
+
+		return c.JSON(websitesUpdatesInfo)
 	})
 
 	app.Get("/website/:id", func(c *fiber.Ctx) error {
-		timeStart := time.Now()
+
 		id := c.Params("id")
 		var website Website
 		if err := db.First(&website, "id = ?", id).Error; err != nil {
@@ -178,8 +274,6 @@ func setupRoutes(app *fiber.App, db *gorm.DB) {
 			}
 		}
 
-		timeEnd := time.Since(timeStart)
-		logger.Infof("Time taken for /website/%s: %v", id, timeEnd)
 		return c.JSON(responseObject)
 	})
 
@@ -194,6 +288,8 @@ func setupRoutes(app *fiber.App, db *gorm.DB) {
 		website.Name = updatedWebsite.Name
 		website.URL = updatedWebsite.URL
 		website.Active = updatedWebsite.Active
+		website.Description = updatedWebsite.Description
+		website.Api_Key = updatedWebsite.Api_Key
 		db.Save(&website)
 		return c.JSON(website)
 	})
@@ -263,7 +359,141 @@ func setupRoutes(app *fiber.App, db *gorm.DB) {
 			Data:    string(respBody),
 			Message: "",
 		})
+
 	})
+
+	app.Post("/website/:id/change-post-status", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		/// get post id and status from JSON body request
+		var body struct {
+			PostID int    `json:"id"`
+			Status string `json:"status"`
+		}
+		if err := c.BodyParser(&body); err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("Failed to parse request body: %v", err))
+		}
+
+		postID := body.PostID
+		if postID == 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(APIError{"bad_request", "Missing 'post_id' field in request body"})
+		}
+
+		status := body.Status
+		if status == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(APIError{"bad_request", "Missing 'status' field in request body"})
+		}
+
+		var website Website
+		if err := db.First(&website, "id = ?", id).Error; err != nil {
+			return c.Status(fiber.StatusNotFound).SendString("No website found with given ID")
+		}
+
+		// Send POST request to change post status
+		urlWithPostStatus := fmt.Sprintf("%s/wp-json/wp-manager-plugin/v1/change-post-status", website.URL)
+
+		println(urlWithPostStatus)
+		println(postID)
+		println(status)
+
+		postData := map[string]interface{}{
+			"api_key": website.Api_Key,
+			"post_id": postID,
+			"status":  status,
+		}
+
+		fmt.Println(postData)
+
+		postBody, err := json.Marshal(postData)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("Failed to marshal request body: %v", err))
+		}
+
+		resp, err := http.Post(urlWithPostStatus, "application/json", bytes.NewBuffer(postBody))
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("Failed to change post status: %v", err))
+		}
+		defer resp.Body.Close()
+
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("Failed to read response body: %v", err))
+		}
+
+		println(string(respBody))
+
+		return c.JSON(APIResponse{
+			Status:  "success",
+			Data:    string(respBody),
+			Message: "",
+		})
+	})
+
+	app.Post("/website/:id/change-page-status", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		/// get page id and status from JSON body request
+		var body struct {
+			PageID int    `json:"id"`
+			Status string `json:"status"`
+		}
+		if err := c.BodyParser(&body); err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("Failed to parse request body: %v", err))
+		}
+
+		pageID := body.PageID
+		if pageID == 0 {
+			return c.Status(fiber.StatusBadRequest).JSON(APIError{"bad_request", "Missing 'page_id' field in request body"})
+		}
+
+		status := body.Status
+		if status == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(APIError{"bad_request", "Missing 'status' field in request body"})
+		}
+
+		var website Website
+		if err := db.First(&website, "id = ?", id).Error; err != nil {
+			return c.Status(fiber.StatusNotFound).SendString("No website found with given ID")
+		}
+
+		// Send POST request to change page status
+		urlWithPageStatus := fmt.Sprintf("%s/wp-json/wp-manager-plugin/v1/change-page-status", website.URL)
+
+		println(urlWithPageStatus)
+
+		postData := map[string]interface{}{
+			"api_key": website.Api_Key,
+			"page_id": pageID,
+			"status":  status,
+		}
+
+		fmt.Println(postData)
+
+		postBody, err := json.Marshal(postData)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("Failed to marshal request body: %v", err))
+		}
+
+		resp, err := http.Post(urlWithPageStatus, "application/json", bytes.NewBuffer(postBody))
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("Failed to change page status: %v", err))
+		}
+
+		defer resp.Body.Close()
+
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("Failed to read response body: %v", err))
+		}
+
+		println(string(respBody))
+
+		return c.JSON(APIResponse{
+			Status:  "success",
+			Data:    string(respBody),
+			Message: "",
+		})
+
+	})
+
 }
 
 func main() {
@@ -279,14 +509,12 @@ func main() {
 					"error": err.Error(),
 				})
 			},
-			Prefork:              true,
-			DisableKeepalive:     true,
+			Prefork:              false,
 			ServerHeader:         "Fiber",
 			StrictRouting:        true,
 			CaseSensitive:        true,
 			Immutable:            true,
 			UnescapePath:         true,
-			ETag:                 true,
 			BodyLimit:            4 * 1024 * 1024,
 			Concurrency:          256 * 1024,
 			ReadTimeout:          10 * time.Second,
@@ -333,6 +561,19 @@ func main() {
 		db.Create(&websites)
 	}
 
+	app.Use(func(c *fiber.Ctx) error {
+		start := time.Now()
+		err := c.Next()
+		duration := time.Since(start)
+		logger.Printf("Request processed in %v\n", duration)
+		return err
+	})
+
 	setupRoutes(app, db)
-	logger.Fatal(app.Listen(":5001"))
+
+	/// server go app but add error handling for the server
+	if err := app.Listen(":3000"); err != nil {
+		logger.Fatal("failed to start server: ", err)
+	}
+
 }
