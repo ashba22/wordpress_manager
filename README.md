@@ -1,9 +1,5 @@
 # WordPress Manager
 
-![WordPress Manager Screenshot 1](https://github.com/ashba22/wordpress_manager/assets/8026183/f7dff855-9ff6-496d-9cbe-ba8cbf89e62f)
-
-![WordPress Manager Screenshot 2](https://github.com/ashba22/wordpress_manager/assets/8026183/f687a342-fab5-4c63-9159-0d36f8dfc8e2)
-
 ## Overview
 WordPress Manager is a comprehensive tool designed to simplify and enhance the management of WordPress websites. Built using modern web technologies, this application provides an intuitive interface and robust functionality for both developers and site administrators.
 
